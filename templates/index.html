@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Payment System</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/js-datepicker@5.18.2/dist/datepicker.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-datepicker@5.18.2/dist/datepicker.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>  
+
+</head>
+
+<body>
+    
+    <div class="container-fluid flex flex-col items-center">
+
+        <div class="flex items-center w-100 my-2">
+            <button id="open-payment-modal" class="btn btn-primary px-4 py-1 border-0">Payment</button>
+            <button id="open-category-modal" class="btn btn-success py-1 border-0 mx-2">Category</button>
+            <button id="open-institution-modal" class="btn btn-success py-1 border-0">Institution</button>
+        </div>
+
+        <div id="payments-list-table" class="card mb-3">
+
+            <div class="card-header pt-3 pb-2 border-0">
+
+                <div id="amount-month" class="h4 w-100 mb-2 text-orange-600 text-center tracking-wide">0,00</div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <button id="prev-month" class="btn btn-light border border-0">
+                        <i class="fa-solid fa-arrow-left"></i>
+                    </button>
+
+                    <h2 id="current-month" class="h5"></h2>
+                    
+                    <button id="next-month" class="btn btn-light border border-0">
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+
+                </div>
+
+                <div id="payments-filters" class="flex items-center mb-2">
+
+                    <div class="form-group pe-1 relative me-2 w-[200px]">
+                        <input type="text" class="form-control py-1 pr-8" id="payment-filter-value" placeholder="Search for Term..." />
+                        <i id="payment-filter-clear" class="fa-solid fa-xmark text-red-500 absolute right-[14px] top-1/2 transform -translate-y-1/2 text-xl cursor-pointer" hidden></i>
+                    </div>
+
+                    <button id="payment-filter-search" class="btn btn-secondary py-[8px] px-[10px] border-0 flex items-center justify-center">
+                        <i class="fa-solid fa-filter"></i>
+                    </button>
+
+                    <div id="payments-filter-date" class="flex items-center ms-auto">
+                    
+                        <div class="form-group me-2 w-[70px]">
+                            <input type="number" class="form-control py-1" id="payments-month-value" placeholder="MM" maxlength="2" min="1" max="12" />
+                        </div>
+                        
+                        <div class="form-group w-[85px]">
+                            <input type="number" class="form-control py-1" id="payments-year-value" placeholder="YYYY" maxlength="4" min="2000" max="3000" />
+                        </div>
+
+                        <button id="payment-filter-date-button" class="btn btn-secondary ms-2 py-[8px] px-[10px] border-0 flex items-center justify-center">
+                            <i class="fa-solid fa-filter"></i>
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="card-body pt-1 pb-0">
+                
+                <table class="table mb-0" id="payment-list">
+
+                    <thead class="mb-3">
+
+                        <tr>
+                            <th>Category</th>
+                            <th>Date</th>
+                            <th>Value</th>
+                            <th>Institution</th>
+                            <th>Method</th>
+                            <th>Installments</th>
+                            <th>Description</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="payments-table-body" class="list"></tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="payment-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+
+        <div class="bg-white p-6 rounded shadow-lg w-1/3">
+
+            <div class="flex">
+                <h2 class="text-xl font-semibold mb-4">Insert Payment</h2>
+            </div>
+
+            <form id="payment-form">
+
+                <div class="row mb-2">
+
+                    <div class="col-6">
+                        <label for="category" class="form-label">Categoria</label>
+                        <select id="category" class="form-select"></select>
+                    </div>
+
+                    <div class="col-6">
+                        <label for="date" class="form-label">Data</label>
+                        <input type="text" id="date" class="form-control" autocomplete="off">
+                    </div>
+
+                </div>
+
+                <div class="row mb-2">
+
+                    <div class="col-6">
+                        <label for="value" class="form-label">Valor</label>
+                        <input type="text" id="value" class="form-control">
+                    </div>
+
+                    <div class="col-6">
+                        <label for="institution" class="form-label">Instituição</label>
+                        <select id="institution" class="form-select"></select>
+                    </div>
+
+                </div>
+
+                <div class="row mb-2">
+
+                    <div class="col-6">
+                        <label for="method" class="form-label">Método</label>
+                        <select id="method" class="form-select">
+                            <option value="Debit">Debit</option>
+                            <option value="Credit">Credit</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6">
+                        <label for="installments" class="form-label">Parcelas</label>
+                        <input type="number" id="installments" class="form-control" value="1" min="1">
+                    </div>
+
+                </div>
+
+                <div class="row mb-4">
+
+                    <div class="col-12">
+                        <label for="description" class="form-label">Descrição</label>
+                        <input type="text" id="description" class="form-control">
+                    </div>
+
+                </div>
+
+                <button type="submit" class="btn btn-primary w-[6rem] py-1 border-0 me-2">Register</button>
+                <button type="button" id="close-payment-modal" class="btn btn-secondary w-[5rem] py-1 border-0">Close</button>
+
+            </form>
+        </div>
+    </div>
+
+    <div id="category-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+
+        <div class="bg-white p-6 rounded shadow-lg w-1/3">
+
+            <h2 class="text-xl font-semibold mb-4">Category</h2>
+
+            <form id="category-form">
+
+                <div class="row mb-4">
+                    <div class="col-6">
+                        <label for="category-name" class="block text-gray-700">Name</label>
+                        <input type="text" id="category-name" class="w-full p-2 border border-gray-300 rounded">
+                    </div>
+
+                    <div class="col-6">
+                        <label for="category-icon" class="block text-gray-700">Icon</label>
+                        <input type="text" id="category-icon" class="w-full p-2 border border-gray-300 rounded">
+                    </div>
+
+                </div>
+
+                <button type="submit" class="btn btn-primary w-[6rem] py-1 border-0 me-2">Register</button>
+                <button type="button" id="close-category-modal" class="btn btn-secondary w-[5rem] py-1 border-0">Close</button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <div id="institution-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+
+        <div class="bg-white p-6 rounded shadow-lg w-1/3">
+
+            <h2 class="text-xl font-semibold mb-4">Institution</h2>
+
+            <form id="institution-form">
+
+                <div class="mb-4">
+                    <label for="institution-name" class="block text-gray-700">Name</label>
+                    <input type="text" id="institution-name" class="w-full p-2 border border-gray-300 rounded">
+                </div>
+
+                <button type="submit" class="btn btn-primary w-[6rem] py-1 border-0 me-2">Register</button>
+                <button type="button" id="close-institution-modal" class="btn btn-secondary w-[5rem] py-1 border-0">Close</button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <div id="edit-payment-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
+
+        <div class="bg-white p-6 rounded shadow-lg w-1/3">
+
+            <div class="flex">
+                <h2 class="text-xl font-semibold mb-4">Update Payment</h2>
+                <i id="delete-payment" class="fa-solid fa-trash text-red-500 ms-auto cursor-pointer text-xl"></i>
+            </div>
+
+            <form id="edit-payment-form">
+
+                <input type="hidden" id="edit-payment-id">
+
+                <div class="row mb-2">
+
+                    <div class="col-6">
+                        <label for="edit-category" class="form-label">Categoria</label>
+                        <select id="edit-category" class="form-select"></select>
+                    </div>
+
+                    <div class="col-6">
+                        <label for="edit-date" class="form-label">Data</label>
+                        <input type="text" id="edit-date" class="form-control" autocomplete="off">
+                    </div>
+
+                </div>
+
+                <div class="row mb-2">
+                    
+                    <div class="col-6">
+                        <label for="edit-value" class="form-label">Valor</label>
+                        <input type="text" id="edit-value" class="form-control">
+                    </div>
+
+                    <div class="col-6">
+                        <label for="edit-institution" class="form-label">Instituição</label>
+                        <select id="edit-institution" class="form-select"></select>
+                    </div>
+
+                </div>
+
+                <div class="row mb-2">
+
+                    <div class="col-6">
+                        <label for="edit-method" class="form-label">Método</label>
+                        <select id="edit-method" class="form-select">
+                            <option value="Debit">Debit</option>
+                            <option value="Credit">Credit</option>
+                        </select>
+                    </div>
+
+                    <div class="col-6">
+                        <label for="edit-installments" class="form-label">Parcelas</label>
+                        <input type="number" id="edit-installments" class="form-control" value="1" min="1">
+                    </div>
+
+                </div>
+
+                <div class="row mb-4">
+
+                    <div class="col-12">
+                        <label for="edit-description" class="form-label">Descrição</label>
+                        <input type="text" id="edit-description" class="form-control">
+                    </div>
+
+                </div>
+
+                <button type="submit" class="btn btn-primary w-[6rem] py-1 border-0 me-2">Save</button>
+                <button type="button" id="close-edit-payment-modal" class="btn btn-secondary w-[5rem] py-1 border-0">Close</button>
+
+            </form>
+        </div>
+    </div>
+
+</body>
+
+</html>
