@@ -34,7 +34,7 @@ thead tr th, tbody tr td {
 
     /* category */
     &:nth-child(1) {
-        width: 22%;
+        width: 20%;
     }
 
     /* date */
@@ -54,7 +54,7 @@ thead tr th, tbody tr td {
 
     /* payment method */
     &:nth-child(5) {
-        width: 14%;
+        width: 12%;
     }
 
     /* installments */
@@ -64,7 +64,7 @@ thead tr th, tbody tr td {
 
     /* description */
     &:nth-child(7) {
-        width: 24%;
+        width: 28%;
     }
 
     text-align: center;

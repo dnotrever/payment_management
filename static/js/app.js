@@ -39,11 +39,12 @@ $(document).ready(function() {
 
     function handleInstallments(method, installments) {
         $(method).change(function() {
-            if ($('#method').val() == 'Debit') {
+            if ($(method).val() == 'Debit') {
                 $(installments).attr('disabled', true);
-                $(installments).val(1)
+                $(installments).val('');
             } else {
                 $(installments).attr('disabled', false);
+                $(installments).val(1);
             }
         });
     }
@@ -62,12 +63,6 @@ $(document).ready(function() {
     function formatSearchTerm(_term) {
         return _term.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
     }
-
-    formatMask('#date', 'date');
-    formatMask('#value', 'currency');
-
-    handleValue('#value')
-    handleInstallments('#method', '#installments');
 
     // api functions
 
@@ -113,32 +108,32 @@ $(document).ready(function() {
 
                     <tr class="text-blue-700" data-id="${payment.id}">
 
-                        <td class="line-category flex justify-center w-100 p-2" data-alias="${payment.category_alias}">
+                        <td class="flex justify-center w-100 p-2" data-alias="${payment.category_alias}">
                             <i class="me-[10px] pt-[3px] ${payment.category_icon}"></i>
                             <p>${payment.category_name}</p>
                         </td>
 
-                        <td class="line-date" class="p-2">
+                        <td class="p-2">
                             ${payment.date}
                         </td>
 
-                        <td class="line-value p-2" data-float="${payment.value}">
+                        <td class="p-2" data-float="${payment.value}">
                             ${formatCurrency(payment.value)}
                         </td>
 
-                        <td class="line-institution p-2" data-alias="${payment.institution_alias}">
+                        <td class="p-2" data-alias="${payment.institution_alias}">
                             ${payment.institution_name}
                         </td>
 
-                        <td class="line-method p-2">
+                        <td class="p-2">
                             ${payment.method}
                         </td>
 
-                        <td class="line-installments p-2">
+                        <td class="p-2">
                             ${payment.installments == 0 ? '-' : payment.installments}
                         </td>
 
-                        <td class="line-description p-2">
+                        <td class="p-2 text-ellipsis text-nowrap">
                             ${payment.description == 0 ? '-' : payment.description}
                         </td>
 
@@ -181,18 +176,28 @@ $(document).ready(function() {
         $(modalId).find('input').val('')
     }
 
-    $('#open-payment-modal').click(function(event) {
-        event.preventDefault();
+    $('#open-payment-modal').click(async function(event) {
+
+        await loadCategories('#category');
+        await loadInstitutions('#institution');
+
+        formatMask('#date', 'date');
+        formatMask('#value', 'currency');
+
+        handleValue('#value')
+        handleInstallments('#method', '#installments');
+
+        $('#method').trigger('change');
+
         openModal('#payment-modal');
+
     });
 
     $('#open-category-modal').click(function(event) {
-        event.preventDefault();
         openModal('#category-modal');
     });
 
     $('#open-institution-modal').click(function(event) {
-        event.preventDefault();
         openModal('#institution-modal');
     });
 
@@ -550,16 +555,11 @@ $(document).ready(function() {
         if ($(this).removeClass('is-invalid'));
     });
 
-    $('#method').trigger('change');
-
     $('#payments-year-value').val(currentYear);
     $('#payments-month-value').val(currentMonth);
 
     useDatepicker('#date');
     useDatepicker('#edit-date');
-
-    loadCategories('#category');
-    loadInstitutions('#institution');
 
     loadPayments(currentYear, currentMonth);
 

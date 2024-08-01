@@ -161,7 +161,7 @@
 
                     <div class="col-6">
                         <label for="installments" class="form-label">Parcelas</label>
-                        <input type="number" id="installments" class="form-control" value="1" min="1">
+                        <input type="number" id="installments" class="form-control" min="1" max="99">
                     </div>
 
                 </div>
@@ -179,7 +179,9 @@
                 <button type="button" id="close-payment-modal" class="btn btn-secondary w-[5rem] py-1 border-0">Close</button>
 
             </form>
+
         </div>
+
     </div>
 
     <div id="category-modal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden">
@@ -287,7 +289,7 @@
 
                     <div class="col-6">
                         <label for="edit-installments" class="form-label">Parcelas</label>
-                        <input type="number" id="edit-installments" class="form-control" value="1" min="1">
+                        <input type="number" id="edit-installments" class="form-control" min="1" max="99">
                     </div>
 
                 </div>
@@ -305,7 +307,9 @@
                 <button type="button" id="close-edit-payment-modal" class="btn btn-secondary w-[5rem] py-1 border-0">Close</button>
 
             </form>
+
         </div>
+
     </div>
 
 </body>
