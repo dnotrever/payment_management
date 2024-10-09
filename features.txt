@@ -1,0 +1,15 @@
+
+[ ]  Pegar nome do banco de dados e colocar como título na página
+
+[ ]  Remover inserção de ícone na categoria
+
+[ ]  Editar categoria e instituição
+
+[ ]  Mostrar mensagem de lista vazia, inclusive ao pesquisar termo onde não houve resultados
+
+[ ]  Cor de pagamento parcelado diferente de pagamento à vista
+
+[ ]  Alterar de crédito e débito para à prazo e à vista, respectivamente
+
+[ ]  Ao clicar para editar pagamento que foi pago à vista, select de parcelas está vindo habilitado
+

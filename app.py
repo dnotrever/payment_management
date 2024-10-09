@@ -1,7 +1,7 @@
 import unidecode
 import locale
 from flask import render_template, request, jsonify
-from models import app, db, Category, Institution, Payment
+from models import app, db, db_name, Category, Institution, Payment
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -9,9 +9,8 @@ locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
 @app.route('/')
 def index():
-    categories = Category.query.all()
-    institutions = Institution.query.all()
-    return render_template('index.html', categories=categories, institutions=institutions)
+    payment_title = db_name
+    return render_template('index.html', payment_title=payment_title)
 
 @app.route('/payments', methods=['POST'])
 def add_payment():
@@ -102,7 +101,6 @@ def get_payments(year, month):
             'id': payment.id,
             'category_name': category.name,
             'category_alias': category.alias,
-            'category_icon': category.icon,
             'date': payment.date.strftime('%d/%m/%Y'),
             'institution_name': institution.name,
             'institution_alias': institution.alias,
@@ -136,7 +134,7 @@ def get_payments(year, month):
 def add_category():
     data = request.get_json()
     alias = unidecode.unidecode(data['name'].replace(' ', '-').lower())
-    category = Category(name=data['name'], alias=alias, icon=data['icon'])
+    category = Category(name=data['name'], alias=alias)
     db.session.add(category)
     db.session.commit()
     return jsonify({'success': True})
@@ -153,7 +151,7 @@ def add_institution():
 @app.route('/categories', methods=['GET'])
 def get_categories():
     categories = Category.query.order_by(Category.name).all()
-    return jsonify([{ 'alias': cat.alias, 'name': cat.name, 'icon': cat.icon } for cat in categories])
+    return jsonify([{ 'id': cat.id, 'alias': cat.alias, 'name': cat.name } for cat in categories])
 
 @app.route('/institutions', methods=['GET'])
 def get_institutions():

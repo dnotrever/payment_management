@@ -2,15 +2,16 @@ from datetime import datetime
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
+db_name = 'casa'
+
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///payments.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_name}.db'
 db = SQLAlchemy(app)
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
     alias = db.Column(db.String(50), unique=True, nullable=False)
-    icon = db.Column(db.String(50), unique=True, nullable=False)
 
 class Institution(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -26,7 +27,6 @@ class Payment(db.Model):
     method = db.Column(db.String(10), nullable=False)
     installments = db.Column(db.Integer, nullable=False, default=1)
     description = db.Column(db.String(200))
-
     category = db.relationship('Category', backref=db.backref('payments', lazy=True))
     institution = db.relationship('Institution', backref=db.backref('payments', lazy=True))
 

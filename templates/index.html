@@ -30,6 +30,7 @@
             <button id="open-payment-modal" class="btn btn-primary px-4 py-1 border-0">Payment</button>
             <button id="open-category-modal" class="btn btn-success py-1 border-0 mx-2">Category</button>
             <button id="open-institution-modal" class="btn btn-success py-1 border-0">Institution</button>
+            <h1 id="payment-title" class="ms-4 fs-4">{{ payment_title.title() }}</h1>
         </div>
 
         <div id="payments-list-table" class="card mb-3">
@@ -193,14 +194,10 @@
             <form id="category-form">
 
                 <div class="row mb-4">
-                    <div class="col-6">
+
+                    <div class="col-12">
                         <label for="category-name" class="block text-gray-700">Name</label>
                         <input type="text" id="category-name" class="w-full p-2 border border-gray-300 rounded">
-                    </div>
-
-                    <div class="col-6">
-                        <label for="category-icon" class="block text-gray-700">Icon</label>
-                        <input type="text" id="category-icon" class="w-full p-2 border border-gray-300 rounded">
                     </div>
 
                 </div>

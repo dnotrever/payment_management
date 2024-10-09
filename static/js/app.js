@@ -69,7 +69,6 @@ $(document).ready(function() {
     async function loadCategories(element) {
 
         await $.get('/categories', function(data) {
-
             $(element).empty();
             data.forEach(category => {
                 $(element).append(`<option value="${category.alias}">${category.name}</option>`);
@@ -109,7 +108,6 @@ $(document).ready(function() {
                     <tr class="text-blue-700" data-id="${payment.id}">
 
                         <td class="flex justify-center w-100 p-2" data-alias="${payment.category_alias}">
-                            <i class="me-[10px] pt-[3px] ${payment.category_icon}"></i>
                             <p>${payment.category_name}</p>
                         </td>
 
@@ -311,7 +309,6 @@ $(document).ready(function() {
 
         const data = {
             name: $('#category-name').val(),
-            icon: $('#category-icon').val().replace('<i class="', '').replace('"></i>', ''),
         };
 
         $.ajax({
