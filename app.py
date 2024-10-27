@@ -108,24 +108,50 @@ def get_payments(year, month):
             'description': payment.description
         }
 
+        inter_condition = (
+            institution.name == 'Inter' and
+            payment.method == 'Credit' and
+            payment.date.day <= 6 and
+            'Maiara' in payment.description
+        )
+
         payment_date = payment.date.strftime('%Y-%m')
         payment_value = payment.value
         payment_installments = payment.installments
 
-        installment_limit = (payment.date + relativedelta(months=payment_installments)).strftime('%Y-%m')
+        if not inter_condition:
+            installment_limit = (payment.date + relativedelta(months=payment_installments)).strftime('%Y-%m')
+        else:
+            installment_limit = (payment.date + relativedelta(months=payment_installments - 1)).strftime('%Y-%m')
+
         current_date = f'{year}-{month:02}'
 
-        if payment_date == current_date:
-            data['value'] = payment_value
-            data['installments'] = payment_installments
-            response.append(data)
+        if not inter_condition:
 
-        elif current_date <= installment_limit and current_date >= payment_date:
-            date_diff = lambda data1, data2: (datetime.strptime(data2, '%Y-%m') - datetime.strptime(data1, '%Y-%m')).days // 30
-            data['value'] = payment_value / payment_installments
-            data['installments'] = str(date_diff(payment_date, current_date)) + ' / ' + str(payment_installments)
-            response.append(data)
+            if payment_date == current_date:
+                data['value'] = payment_value
+                data['installments'] = payment_installments
+                response.append(data)
 
+            elif current_date <= installment_limit and current_date >= payment_date:
+                date_diff = lambda data1, data2: (datetime.strptime(data2, '%Y-%m') - datetime.strptime(data1, '%Y-%m')).days // 30
+                data['value'] = payment_value / payment_installments
+                data['installments'] = str(date_diff(payment_date, current_date)) + ' / ' + str(payment_installments)
+                response.append(data)
+
+        else:
+
+            if payment_date == current_date:
+                data['value'] = payment_value / payment_installments
+                data['installments'] = '1 / ' + str(payment_installments)
+                response.append(data)
+
+            elif current_date <= installment_limit and current_date >= payment_date:
+                date_diff = lambda data1, data2: (datetime.strptime(data2, '%Y-%m') - datetime.strptime(data1, '%Y-%m')).days // 30
+                data['value'] = payment_value / payment_installments
+                data['installments'] = str(date_diff(payment_date, current_date) + 1) + ' / ' + str(payment_installments)
+                response.append(data)
+        
     response_sorted = sorted(response, key=lambda x: datetime.strptime(x['date'], '%d/%m/%Y'), reverse=True)
 
     return jsonify(response_sorted)

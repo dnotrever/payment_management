@@ -60,8 +60,19 @@ $(document).ready(function() {
         });
     }
 
-    function formatSearchTerm(_term) {
-        return _term.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    function formatSearchTerm(term) {
+        return term.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    }
+
+    function compareTwoDates(date1, date2, comparison='menorIgual') {
+        const [day1, month1, year1] = date1.split('/').map(Number);
+        const [day2, month2, year2] = date2.split('/').map(Number);
+        const dateObj1 = new Date(year1, month1 - 1, day1);
+        const dateObj2 = new Date(year2, month2 - 1, day2);
+        let _comparisons = {
+            menorIgual: dateObj1 <= dateObj2,
+        }
+        return _comparisons[comparison];
     }
 
     // api functions
@@ -145,11 +156,21 @@ $(document).ready(function() {
 
         $('#payments-table-body tr').each(function() {
 
+            let _date = $(this).find('td').eq(1).text().trim();
             let _value = $(this).find('td').eq(2).data('float');
+            let _institution = $(this).find('td').eq(3).text().trim();
             let _method = $(this).find('td').eq(4).text().trim();
             let _installments = $(this).find('td').eq(5).text().trim();
+            let _description = $(this).find('td').eq(6).text().trim();
 
-            if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/'))) {
+            let _interCondition = (
+                _institution == 'Inter' &&
+                _description.includes('Maiara') &&
+                _method == 'Credit' &&
+                compareTwoDates(_date, `06/${currentMonth}/${currentYear}`)
+            );
+
+            if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _interCondition) {
                 _amountMonth += _value;
             }
 
@@ -160,6 +181,10 @@ $(document).ready(function() {
         });
 
         $('#amount-month').text(formatCurrency(_amountMonth));
+
+        if ($('#payment-filter-value').val() != '') {
+            $('#payment-filter-search').trigger('click'); 
+        }
 
     }
 
@@ -421,26 +446,56 @@ $(document).ready(function() {
 
         $('#payments-table-body tr').each(function() {
 
+            // let _value = $(this).find('td').eq(2).data('float');
+            // let _method = $(this).find('td').eq(4).text().trim();
+            // let _installments = $(this).find('td').eq(5).text().trim();
+
+            let _date = $(this).find('td').eq(1).text().trim();
             let _value = $(this).find('td').eq(2).data('float');
+            let _institution = $(this).find('td').eq(3).text().trim();
             let _method = $(this).find('td').eq(4).text().trim();
             let _installments = $(this).find('td').eq(5).text().trim();
+            let _description = $(this).find('td').eq(6).text().trim();
+
+            let _interCondition = (
+                _institution == 'Inter' &&
+                _description.includes('Maiara') &&
+                _method == 'Credit' &&
+                compareTwoDates(_date, `06/${currentMonth}/${currentYear}`)
+            );
 
             if (_filter_value) {
-                let _hide_line = formatSearchTerm($(this).text()).includes(formatSearchTerm(_filter_value)) ? false : true;
+
+                let _line_text = $(this).text();
+                let _terms = _filter_value.split(';');
+                let _filter_check = 0;
+
+                _terms.forEach(function(element) {
+                    if (formatSearchTerm(_line_text).includes(formatSearchTerm(element)))
+                        _filter_check += 1;
+                })
+                
+                let _hide_line = _filter_check >= _terms.length ? false : true;
+
                 $(this).attr('hidden', _hide_line);
+                    
                 $('#payment-filter-clear').attr('hidden', false);
+
             } else {
                 $(this).attr('hidden', false);
                 $('#payment-filter-clear').attr('hidden', true);
             }
 
-            if ($(this).attr('hidden') === undefined && ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')))) {
+            // if ($(this).attr('hidden') === undefined && ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')))) {
+            //     _amountMonth += _value;
+            // }   
+
+            if ($(this).attr('hidden') === undefined && ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _interCondition)) {
                 _amountMonth += _value;
             }   
 
         });
 
-        
         $('#amount-month').text(formatCurrency(_amountMonth));
 
     });
@@ -457,11 +512,29 @@ $(document).ready(function() {
 
             $(this).attr('hidden', false);
 
+            // let _value = $(this).find('td').eq(2).data('float');
+            // let _method = $(this).find('td').eq(4).text().trim();
+            // let _installments = $(this).find('td').eq(5).text().trim();
+
+            // if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/'))) {
+            //     _amountMonth += _value;
+            // }
+
+            let _date = $(this).find('td').eq(1).text().trim();
             let _value = $(this).find('td').eq(2).data('float');
+            let _institution = $(this).find('td').eq(3).text().trim();
             let _method = $(this).find('td').eq(4).text().trim();
             let _installments = $(this).find('td').eq(5).text().trim();
+            let _description = $(this).find('td').eq(6).text().trim();
 
-            if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/'))) {
+            let _interCondition = (
+                _institution == 'Inter' &&
+                _description.includes('Maiara') &&
+                _method == 'Credit' &&
+                compareTwoDates(_date, `06/${currentMonth}/${currentYear}`)
+            );
+
+            if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _interCondition) {
                 _amountMonth += _value;
             }
 
