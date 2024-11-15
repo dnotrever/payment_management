@@ -108,10 +108,17 @@ def get_payments(year, month):
             'description': payment.description
         }
 
-        inter_condition = (
-            institution.name == 'Inter' and
+        # inter_condition = (
+        #     institution.name == 'Inter' and
+        #     payment.method == 'Credit' and
+        #     payment.date.day <= 6 and
+        #     'Maiara' in payment.description
+        # )
+
+        maiara_condition = (
+            (institution.name == 'Inter' or institution.name == 'Sofisa') and
             payment.method == 'Credit' and
-            payment.date.day <= 6 and
+            (payment.date.day <= 5 or payment.date.day <= 8) and
             'Maiara' in payment.description
         )
 
@@ -119,14 +126,14 @@ def get_payments(year, month):
         payment_value = payment.value
         payment_installments = payment.installments
 
-        if not inter_condition:
+        if not maiara_condition:
             installment_limit = (payment.date + relativedelta(months=payment_installments)).strftime('%Y-%m')
         else:
             installment_limit = (payment.date + relativedelta(months=payment_installments - 1)).strftime('%Y-%m')
 
         current_date = f'{year}-{month:02}'
 
-        if not inter_condition:
+        if not maiara_condition:
 
             if payment_date == current_date:
                 data['value'] = payment_value
@@ -143,7 +150,8 @@ def get_payments(year, month):
 
             if payment_date == current_date:
                 data['value'] = payment_value / payment_installments
-                data['installments'] = '1 / ' + str(payment_installments)
+                # data['installments'] = '1 / ' + str(payment_installments)
+                data['installments'] = '1 / ' + str(payment_installments) if payment_installments > 1 else payment_installments
                 response.append(data)
 
             elif current_date <= installment_limit and current_date >= payment_date:
