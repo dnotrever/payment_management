@@ -193,4 +193,4 @@ def get_institutions():
     return jsonify([{ 'alias': inst.alias, 'name': inst.name } for inst in institutions])
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
