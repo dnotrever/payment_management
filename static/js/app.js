@@ -95,7 +95,7 @@ $(document).ready(function() {
             $(element).empty();
 
             data.forEach(institution => {
-                $(element).append(`<option value="${institution.alias}">${institution.name}</option>`);
+                $(element).append(`<option value="${institution.alias}" ${institution.alias == 'itau' ? 'selected' : ''}>${institution.name}</option>`);
             });
 
         });
