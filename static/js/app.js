@@ -70,6 +70,7 @@ $(document).ready(function() {
         const dateObj1 = new Date(year1, month1 - 1, day1);
         const dateObj2 = new Date(year2, month2 - 1, day2);
         let _comparisons = {
+            igual: dateObj1 == dateObj2,
             menorIgual: dateObj1 <= dateObj2,
         }
         return _comparisons[comparison];
@@ -161,33 +162,22 @@ $(document).ready(function() {
             let _institution = $(this).find('td').eq(3).text().trim();
             let _method = $(this).find('td').eq(4).text().trim();
             let _installments = $(this).find('td').eq(5).text().trim();
-            let _description = $(this).find('td').eq(6).text().trim();
+            // let _description = $(this).find('td').eq(6).text().trim();
 
-            // let _interCondition = (
-            //     _institution == 'Inter' &&
-            //     _description.includes('Maiara') &&
-            //     _method == 'Credit' &&
-            //     compareTwoDates(_date, `05/${currentMonth}/${currentYear}`)
-            // );
-
-            let _maiaraCondition = (
-                (_institution == 'Inter' || _institution == 'Sofisa') &&
-                _description.includes('Maiara') &&
+            let _itauCondition = (
+                _institution == 'Itaú' &&
+                // _description.includes('Maiara') &&
                 _method == 'Credit' &&
-                (compareTwoDates(_date, `05/${currentMonth}/${currentYear}`) || compareTwoDates(_date, `08/${currentMonth}/${currentYear}`))
+                (compareTwoDates(_date, `10/${currentMonth}/${currentYear}`))
             );
 
-            if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _maiaraCondition) {
+            if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _itauCondition) {
                 _amountMonth += _value;
             }
 
-            // if (_installments.includes('/')) {
-            //     $(this).addClass('text-gray-600');
-            // }
-
             if (_installments.includes('/')) {
                 $(this).removeClass('text-blue-700').addClass('text-red-500');
-            } else if (!_installments.includes('-') && !_maiaraCondition) {
+            } else if (!_installments.includes('-') && !_itauCondition) {
                 $(this).removeClass('text-blue-700').addClass('text-gray-500');
             }
 
@@ -238,6 +228,7 @@ $(document).ready(function() {
         openModal('#institution-modal');
     });
 
+    // abre o modal de um pagamento (para edição ou exclusão)
     $('#payments-table-body').on('click', 'tr', async function() {
 
         _paymentId = $(this).data('id');
@@ -245,7 +236,21 @@ $(document).ready(function() {
         let _paymentDate = $(this).find('td').eq(1).text().trim();
         let _paymentInstallments = $(this).find('td').eq(5).text().trim();
 
-        if (_paymentInstallments.includes('/')) {
+
+        let _institution = $(this).find('td').eq(3).text().trim();
+        let _method = $(this).find('td').eq(4).text().trim();
+
+        let _itauCondition = (
+            _institution == 'Itaú' &&
+            _method == 'Credit' &&
+            (compareTwoDates(_paymentDate, `10/${currentMonth}/${currentYear}`))
+        );
+
+        let _currentDate = (currentMonth.toString().padStart(2, '0') + '/' + currentYear).trim();
+        let _paymentDateFormatted = (_paymentDate.substring(3)).trim();
+        let _isSameDate = _currentDate.includes(_paymentDateFormatted);
+
+        if ( (_paymentInstallments.includes('/') || !_itauCondition) && !_isSameDate) {
             currentYear = parseInt(_paymentDate.split('/')[2]);
             currentMonth = parseInt(_paymentDate.split('/')[1]);
             return loadPayments(currentYear, currentMonth);
@@ -260,9 +265,12 @@ $(document).ready(function() {
             $('#edit-value').val(formatCurrency(payment.value));
             $('#edit-institution').val(payment.institution_alias);
             $('#edit-method').val(payment.method);
-            $('#edit-installments').val(payment.installments);
+            if (payment.method == 'Credit') $('#edit-installments').val(payment.installments);
             $('#edit-description').val(payment.description);
         });
+
+        let _isDebit = $('#edit-method').val() == 'Debit';
+        $('#edit-installments').attr('disabled', _isDebit);
 
         formatMask('#edit-date', 'date');
         formatMask('#edit-value', 'currency');
@@ -460,29 +468,18 @@ $(document).ready(function() {
 
         $('#payments-table-body tr').each(function() {
 
-            // let _value = $(this).find('td').eq(2).data('float');
-            // let _method = $(this).find('td').eq(4).text().trim();
-            // let _installments = $(this).find('td').eq(5).text().trim();
-
             let _date = $(this).find('td').eq(1).text().trim();
             let _value = $(this).find('td').eq(2).data('float');
             let _institution = $(this).find('td').eq(3).text().trim();
             let _method = $(this).find('td').eq(4).text().trim();
             let _installments = $(this).find('td').eq(5).text().trim();
-            let _description = $(this).find('td').eq(6).text().trim();
+            // let _description = $(this).find('td').eq(6).text().trim();
 
-            // let _interCondition = (
-            //     _institution == 'Inter' &&
-            //     _description.includes('Maiara') &&
-            //     _method == 'Credit' &&
-            //     compareTwoDates(_date, `05/${currentMonth}/${currentYear}`)
-            // );
-
-            let _maiaraCondition = (
-                (_institution == 'Inter' || _institution == 'Sofisa') &&
-                _description.includes('Maiara') &&
+            let _itauCondition = (
+                _institution == 'Itaú' &&
+                // _description.includes('Maiara') &&
                 _method == 'Credit' &&
-                (compareTwoDates(_date, `05/${currentMonth}/${currentYear}`) || compareTwoDates(_date, `08/${currentMonth}/${currentYear}`))
+                (compareTwoDates(_date, `10/${currentMonth}/${currentYear}`))
             );
 
             if (_filter_value) {
@@ -507,11 +504,7 @@ $(document).ready(function() {
                 $('#payment-filter-clear').attr('hidden', true);
             }
 
-            // if ($(this).attr('hidden') === undefined && ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')))) {
-            //     _amountMonth += _value;
-            // }   
-
-            if ($(this).attr('hidden') === undefined && ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _maiaraCondition)) {
+            if ($(this).attr('hidden') === undefined && ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _itauCondition)) {
                 _amountMonth += _value;
             }   
 
@@ -533,36 +526,21 @@ $(document).ready(function() {
 
             $(this).attr('hidden', false);
 
-            // let _value = $(this).find('td').eq(2).data('float');
-            // let _method = $(this).find('td').eq(4).text().trim();
-            // let _installments = $(this).find('td').eq(5).text().trim();
-
-            // if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/'))) {
-            //     _amountMonth += _value;
-            // }
-
             let _date = $(this).find('td').eq(1).text().trim();
             let _value = $(this).find('td').eq(2).data('float');
             let _institution = $(this).find('td').eq(3).text().trim();
             let _method = $(this).find('td').eq(4).text().trim();
             let _installments = $(this).find('td').eq(5).text().trim();
-            let _description = $(this).find('td').eq(6).text().trim();
+            // let _description = $(this).find('td').eq(6).text().trim();
 
-            // let _interCondition = (
-            //     _institution == 'Inter' &&
-            //     _description.includes('Maiara') &&
-            //     _method == 'Credit' &&
-            //     compareTwoDates(_date, `05/${currentMonth}/${currentYear}`)
-            // );
-
-            let _maiaraCondition = (
-                (_institution == 'Inter' || _institution == 'Sofisa') &&
-                _description.includes('Maiara') &&
+            let _itauCondition = (
+                _institution == 'Itaú' &&
+                // _description.includes('Maiara') &&
                 _method == 'Credit' &&
-                (compareTwoDates(_date, `05/${currentMonth}/${currentYear}`) || compareTwoDates(_date, `08/${currentMonth}/${currentYear}`))
+                (compareTwoDates(_date, `10/${currentMonth}/${currentYear}`))
             );
 
-            if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _maiaraCondition) {
+            if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _itauCondition) {
                 _amountMonth += _value;
             }
 
@@ -598,10 +576,11 @@ $(document).ready(function() {
 
     });
 
-    $('#institution').on('change', function() {
-        let _institution = $(this).val();
-        if (_institution == 'itau') {
-            $('#description').val('DiMai');
+    $('#category').on('change', function() {
+        let _category = $(this).val();
+        let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua'];
+        if (!_categories.includes(_category)) {
+            $('#description').val('Outros');
             $('#description').prop('disabled', true);
         } else {
             $('#description').val('');

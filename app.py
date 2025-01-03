@@ -71,7 +71,7 @@ def get_payment(id):
         payment.date = datetime.strptime(data['date'], '%d/%m/%Y')
         payment.value = data['value']
         payment.method = data['method']
-        payment.installments = data['installments']
+        payment.installments = data['installments'] if data['method'] == 'Credit' else 0
         payment.description = data['description']
 
         db.session.commit()
@@ -108,32 +108,24 @@ def get_payments(year, month):
             'description': payment.description
         }
 
-        # inter_condition = (
-        #     institution.name == 'Inter' and
-        #     payment.method == 'Credit' and
-        #     payment.date.day <= 6 and
-        #     'Maiara' in payment.description
-        # )
-
-        maiara_condition = (
-            (institution.name == 'Inter' or institution.name == 'Sofisa') and
+        itau_condition = (
+            institution.name == 'Itaú' and
             payment.method == 'Credit' and
-            (payment.date.day <= 5 or payment.date.day <= 8) and
-            'Maiara' in payment.description
+            payment.date.day <= 10
         )
 
         payment_date = payment.date.strftime('%Y-%m')
         payment_value = payment.value
         payment_installments = payment.installments
 
-        if not maiara_condition:
+        if not itau_condition:
             installment_limit = (payment.date + relativedelta(months=payment_installments)).strftime('%Y-%m')
         else:
             installment_limit = (payment.date + relativedelta(months=payment_installments - 1)).strftime('%Y-%m')
 
         current_date = f'{year}-{month:02}'
 
-        if not maiara_condition:
+        if not itau_condition:
 
             if payment_date == current_date:
                 data['value'] = payment_value
