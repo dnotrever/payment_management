@@ -31,6 +31,7 @@
             <button id="open-category-modal" class="btn btn-success py-1 border-0 mx-2">Category</button>
             <button id="open-institution-modal" class="btn btn-success py-1 border-0">Institution</button>
             <h1 id="payment-title" class="ms-4 fs-4">{{ payment_title.title() }}</h1>
+            <button id="update-spreadsheets" class="btn btn-secondary py-1 border-0 ms-auto">Update Sheets</button>
         </div>
 
         <div id="payments-list-table" class="card mb-3">
@@ -39,7 +40,7 @@
 
                 <div id="amount-month" class="h4 w-100 mb-2 text-orange-600 text-center tracking-wide">0,00</div>
 
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
 
                     <button id="prev-month" class="btn btn-light border border-0">
                         <i class="fa-solid fa-arrow-left"></i>
@@ -84,9 +85,9 @@
 
             </div>
 
-            <div class="card-body pt-1 pb-0">
+            <div class="card-body py-0">
                 
-                <table class="table mb-0" id="payment-list">
+                <table class="table mb-0 table-hover" id="payment-list">
 
                     <thead class="mb-3">
 

@@ -191,6 +191,16 @@ $(document).ready(function() {
 
     }
 
+    async function updateSpreadSheets() {
+
+        await $.get('/update-spreadsheets', function(data) {
+
+            console.log(data)
+            
+        });
+
+    }
+
     // modal
 
     function openModal(modalId) {
@@ -576,26 +586,33 @@ $(document).ready(function() {
 
     });
 
-    $('#category').on('change', function() {
-        let _category = $(this).val();
-        let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua'];
-        if (!_categories.includes(_category)) {
-            $('#description').val('Outros');
-            $('#description').prop('disabled', true);
-        } else {
-            $('#description').val('');
-            $('#description').prop('disabled', false);
-        }
-    });
+    // $('#category').on('change', function() {
+    //     let _category = $(this).val();
+    //     let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua'];
+    //     if (!_categories.includes(_category)) {
+    //         $('#description').val('Outros');
+    //         $('#description').prop('disabled', true);
+    //     } else {
+    //         $('#description').val('');
+    //         $('#description').prop('disabled', false);
+    //     }
+    // });
 
     $('#category').on('change', function() {
         let _category = $(this).val();
-        if (['aluguel', 'light', 'agua', 'internet', ''].includes(_category)) {
-            $('#institution').val('itau');
-        } else {
-            $('#institution').val('caju');
-        }
+        $('#institution').val('itau');
+        // if (['aluguel', 'light', 'agua', 'internet', ''].includes(_category)) {
+        //     $('#institution').val('itau');
+        // } else {
+        //     $('#institution').val('caju');
+        // }
         $('#institution').trigger('change');
+    });
+
+    $('#update-spreadsheets').on('click', async function() {
+
+        await updateSpreadSheets();
+
     });
 
     $(document).keydown(function(event) {

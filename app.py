@@ -1,11 +1,18 @@
-import unidecode
+import os
 import locale
+import unidecode
 from flask import render_template, request, jsonify
 from models import app, db, db_name, Category, Institution, Payment
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+
+from dotenv import load_dotenv
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
 
 @app.route('/')
 def index():
@@ -183,6 +190,79 @@ def get_categories():
 def get_institutions():
     institutions = Institution.query.order_by(Institution.name).all()
     return jsonify([{ 'alias': inst.alias, 'name': inst.name } for inst in institutions])
+
+@app.route('/update-spreadsheets', methods=['GET'])
+def update_spreadsheets():
+
+    is_success = None
+    message = None
+
+    try:
+
+        load_dotenv()
+
+        credentials_path = os.path.join(os.path.dirname(__file__), 'credentials.json')
+
+        scopes = ['https://www.googleapis.com/auth/spreadsheets']
+        sheet_id = os.getenv('SPREADSHEET_ID')
+
+        def authenticate_sheets():
+
+            creds = None
+
+            if os.path.exists('token.json'):
+                creds = Credentials.from_authorized_user_file('token.json', scopes)
+
+            if not creds or not creds.valid:
+
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
+                else:
+                    # flow = InstalledAppFlow.from_client_secrets_file('credentials.json', scopes)
+                    flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
+                    creds = flow.run_local_server(port=0)
+
+                with open('token.json', 'w') as token:
+                    token.write(creds.to_json())
+
+            return build('sheets', 'v4', credentials=creds)
+
+        service = authenticate_sheets()
+
+        ###### pendente: configurar esse trecho 
+
+        values = [
+            ['Te Amo, MaiMai']
+        ]
+
+        range_name = '2025!C19'
+
+        ###### pendente
+
+        body = {
+            'values': values
+        }
+
+        service.spreadsheets().values().update(
+            spreadsheetId=sheet_id,
+            range=range_name,
+            valueInputOption='RAW',  # RAW para valor literal, USER_ENTERED para interpretar como fórmula
+            body=body
+        ).execute()
+
+        # return jsonify({'success': True, 'message': 'Sheets updated successfully.'})
+        is_success = True
+        message = 'Sheets updated successfully.'
+
+    except Exception as err:
+
+        # return jsonify({'success': False, 'message': str(err)})
+        is_success = False
+        message = str(err)
+    
+    finally:
+
+        return jsonify({'success': is_success, 'message': message})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

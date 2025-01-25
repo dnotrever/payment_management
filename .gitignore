@@ -3,3 +3,5 @@ __pycache__
 *.env
 *.vscode
 *.db
+credentials.json
+token.json
