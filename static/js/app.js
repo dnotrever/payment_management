@@ -76,6 +76,33 @@ $(document).ready(function() {
         return _comparisons[comparison];
     }
 
+    function toast({ message = '', status = 'info', close = true }) {
+
+        let _toastContainer = $('.toast-container');
+        let _toast = $('.toast');
+        let _message = _toast.find('.toast-message');
+        let _btnClose = _toast.find('.btn-close');
+
+        let _status = {
+            success: 'bg-green-700',
+            error: 'bg-red-700',
+            info: 'bg-blue-700',
+        }
+
+        !close ?
+            _btnClose.prop('hidden', true) :
+            _btnClose.prop('hidden', false);
+
+        _toast.removeClass(function(index, className) { return (className.match(/\bbg-\S+/g) || []).join(' '); });
+        _toast.addClass(_status[status])
+
+        _message.text(message);
+
+        _toastContainer.prop('hidden', false);
+        _toast.toast('show');
+
+    }
+
     // api functions
 
     async function loadCategories(element) {
@@ -191,11 +218,51 @@ $(document).ready(function() {
 
     }
 
-    async function updateSpreadSheets() {
+    async function updateSpreadSheets(date) {
 
-        await $.get('/update-spreadsheets', function(data) {
+        toast({
+            message: 'Updating Spreadsheets...',
+            status: 'info',
+            close: false
+        });
 
-            console.log(data)
+        let _month = date ? parseInt(date.split('/')[1]) : parseInt(currentMonth);
+        let _year = date ? date.split('/')[2] : currentYear;
+        let _supermercadoAmount = 0.00;
+        let _outrosAmount = 0.00;
+
+        $('#payments-table-body tr').each(function() {
+
+            let _category = $(this).find('td').eq(0).text().trim();
+            let _value = $(this).find('td').eq(2).data('float');
+            let _description = $(this).find('td').eq(6).text().trim();
+
+            if (_category.toLowerCase() == 'supermercado') {
+                _supermercadoAmount += _value;
+            } 
+
+            if (_description.toLowerCase() == 'outros') {
+                _outrosAmount += _value;
+                console.log(_description)
+            } 
+            
+        });
+
+        let _data = {
+            'month': _month,
+            'year': _year,
+            'supermercado': formatCurrency(_supermercadoAmount),
+            'outros': formatCurrency(_outrosAmount),
+        };
+
+        $.get('/update-spreadsheets', _data, function(data) {
+
+            let _status = data.success ? 'success' : 'error';
+
+            toast({
+                message: data.message,
+                status: _status,
+            })
             
         });
 
@@ -308,9 +375,16 @@ $(document).ready(function() {
         closeModal('#edit-payment-modal');
     });
 
-    // forms
+    //------- F O R M S
 
+    // insert payment
     $('#payment-form').submit(function(event) {
+
+        toast({
+            message: 'Inserting payment...',
+            status: 'info',
+            close: false
+        });
 
         event.preventDefault();
 
@@ -333,7 +407,12 @@ $(document).ready(function() {
 
         });
 
-        if (_form_invalid) return false;
+        if (_form_invalid) {
+            return toast({
+                message: 'Invalid form.',
+                status: 'error',
+            });
+        }
 
         const data = {
             category: $('#category').val(),
@@ -350,9 +429,14 @@ $(document).ready(function() {
             url: '/payments',
             contentType: 'application/json',
             data: JSON.stringify(data),
-            success: function() {
-                loadPayments(currentYear, currentMonth);
+            success: async function() {
+                await loadPayments(currentYear, currentMonth);
                 $('#payment-form')[0].reset();
+                updateSpreadSheets(data.date);
+                toast({
+                    message: 'Payment inserted successfully!',
+                    status: 'success',
+                });
             }
         });
 
@@ -402,7 +486,14 @@ $(document).ready(function() {
 
     });
 
+    // update payment
     $('#edit-payment-form').submit(function(event) {
+
+        toast({
+            message: 'Updating payment...',
+            status: 'info',
+            close: false
+        });
 
         event.preventDefault();
 
@@ -421,25 +512,46 @@ $(document).ready(function() {
             url: `/payment/${_paymentId}`,
             contentType: 'application/json',
             data: JSON.stringify(data),
-            success: function() {
-                loadPayments(currentYear, currentMonth);
-                closeModal('#edit-payment-modal');
+            success: async function() {
+                await loadPayments(currentYear, currentMonth);
+                updateSpreadSheets(data.date);
+                toast({
+                    message: 'Payment inserted successfully!',
+                    status: 'success',
+                });
             }
         });
 
+        closeModal('#edit-payment-modal');
+
     });
 
+    // delete payment
     $('#delete-payment').on('click', function() {
+
+        toast({
+            message: 'Deleting payment...',
+            status: 'info',
+            close: false
+        });
+
+        let _date = $(this).closest('#edit-payment-modal').find('#edit-date').val();
 
         $.ajax({
             type: 'DELETE',
             url: `/payment/${_paymentId}`,
             contentType: 'application/json',
-            success: function() {
-                loadPayments(currentYear, currentMonth);
-                closeModal('#edit-payment-modal');
+            success: async function() {
+                await loadPayments(currentYear, currentMonth);
+                updateSpreadSheets(_date);
+                toast({
+                    message: 'Payment deleted successfully!',
+                    status: 'success',
+                });
             }
         });
+
+        closeModal('#edit-payment-modal');
 
     }); 
 
@@ -560,7 +672,7 @@ $(document).ready(function() {
 
     });
 
-    $('#payment-filter-date-button').click(function() {
+    $('#payment-filter-date-button').click(async function() {
 
         let _year = $('#payments-year-value').val();
         let _month = $('#payments-month-value').val();
@@ -570,7 +682,7 @@ $(document).ready(function() {
             currentYear = _year;
             currentMonth = _month;
     
-            loadPayments(currentYear, currentMonth);
+            await loadPayments(currentYear, currentMonth);
 
         }
 
@@ -586,27 +698,51 @@ $(document).ready(function() {
 
     });
 
-    // $('#category').on('change', function() {
-    //     let _category = $(this).val();
-    //     let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua'];
-    //     if (!_categories.includes(_category)) {
-    //         $('#description').val('Outros');
-    //         $('#description').prop('disabled', true);
-    //     } else {
-    //         $('#description').val('');
-    //         $('#description').prop('disabled', false);
-    //     }
-    // });
-
     $('#category').on('change', function() {
         let _category = $(this).val();
-        $('#institution').val('itau');
-        // if (['aluguel', 'light', 'agua', 'internet', ''].includes(_category)) {
-        //     $('#institution').val('itau');
-        // } else {
-        //     $('#institution').val('caju');
-        // }
-        $('#institution').trigger('change');
+        let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua'];
+        if (!_categories.includes(_category)) {
+            $('#description').val('Outros');
+            $('#description').prop('disabled', true);
+        } else {
+            $('#description').val('');
+            $('#description').prop('disabled', false);
+        }
+    });
+
+    // $('#category').on('change', function() {
+    //     let _category = $(this).val();
+    //     $('#institution').val('itau');
+    //     // if (['aluguel', 'light', 'agua', 'internet', ''].includes(_category)) {
+    //     //     $('#institution').val('itau');
+    //     // } else {
+    //     //     $('#institution').val('caju');
+    //     // }
+    //     $('#institution').trigger('change');
+    // });
+
+    $('#payment-database').on('change', function() {
+
+        // const data = {
+        //     db_name: $(this).val()
+        // };
+
+        // $.ajax({
+        //     type: 'POST',
+        //     url: '/change-database',
+        //     contentType: 'application/json',
+        //     data: JSON.stringify(data),
+        //     success: async function() {
+        //         await loadPayments(currentYear, currentMonth);
+        //         toast({
+        //             message: 'The database has been changed.',
+        //             status: 'success',
+        //         });
+        //     }
+        // });
+
+        location.reload();
+
     });
 
     $('#update-spreadsheets').on('click', async function() {

@@ -30,7 +30,13 @@
             <button id="open-payment-modal" class="btn btn-primary px-4 py-1 border-0">Payment</button>
             <button id="open-category-modal" class="btn btn-success py-1 border-0 mx-2">Category</button>
             <button id="open-institution-modal" class="btn btn-success py-1 border-0">Institution</button>
-            <h1 id="payment-title" class="ms-4 fs-4">{{ payment_title.title() }}</h1>
+            <!-- <h1 id="payment-title" class="ms-4 fs-4">{{ payment_title.title() }}</h1> -->
+            <div class="form-group my-0 mx-2">
+                <select id="payment-database" class="form-select py-1">
+                    <option selected value="casa">Casa</option>
+                    <option value="pessoal">Pessoal</option>
+                </select>
+            </div>
             <button id="update-spreadsheets" class="btn btn-secondary py-1 border-0 ms-auto">Update Sheets</button>
         </div>
 
@@ -310,6 +316,15 @@
 
     </div>
 
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" hidden>
+        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-body ps-4 pe-3 d-flex align-items-center">
+                <div class="toast-message text-white fs-5 me-3"></div>
+                <button type="button" class="btn-close btn-close-white ms-auto px-0" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+    
 </body>
 
 </html>

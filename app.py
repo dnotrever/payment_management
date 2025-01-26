@@ -1,10 +1,10 @@
 import os
 import locale
 import unidecode
-from flask import render_template, request, jsonify
-from models import app, db, db_name, Category, Institution, Payment
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+from models import app, db, db_name, Category, Institution, Payment
+from flask import render_template, request, jsonify
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
@@ -196,73 +196,104 @@ def update_spreadsheets():
 
     is_success = None
     message = None
+    context = None
 
     try:
 
         load_dotenv()
 
-        credentials_path = os.path.join(os.path.dirname(__file__), 'credentials.json')
-
-        scopes = ['https://www.googleapis.com/auth/spreadsheets']
         sheet_id = os.getenv('SPREADSHEET_ID')
 
         def authenticate_sheets():
 
+            credentials_path = os.path.join(os.path.dirname(__file__), 'credentials.json')
+            token_path = os.path.join(os.path.dirname(__file__), 'token.json')
+            scopes = ['https://www.googleapis.com/auth/spreadsheets']
             creds = None
 
-            if os.path.exists('token.json'):
-                creds = Credentials.from_authorized_user_file('token.json', scopes)
+            if os.path.exists(token_path):
+                creds = Credentials.from_authorized_user_file(token_path, scopes)
 
             if not creds or not creds.valid:
 
                 if creds and creds.expired and creds.refresh_token:
                     creds.refresh(Request())
                 else:
-                    # flow = InstalledAppFlow.from_client_secrets_file('credentials.json', scopes)
                     flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
                     creds = flow.run_local_server(port=0)
 
-                with open('token.json', 'w') as token:
+                with open(token_path, 'w') as token:
                     token.write(creds.to_json())
 
             return build('sheets', 'v4', credentials=creds)
 
         service = authenticate_sheets()
 
-        ###### pendente: configurar esse trecho 
+        month = request.args.get('month')
+        year = request.args.get('year')
+        supermercado_amount = request.args.get('supermercado')
+        outros_amount = request.args.get('outros')
 
-        values = [
-            ['Te Amo, MaiMai']
+        month_column = chr(ord('C') + int(month))
+
+        supermercado_line = f'{year}!{month_column}6'
+        outros_line = f'{year}!{month_column}12'
+
+        values_supermercado = [
+            [supermercado_amount]
         ]
 
-        range_name = '2025!C19'
+        values_outros = [
+            [outros_amount]
+        ]
 
-        ###### pendente
-
-        body = {
-            'values': values
+        body_supermercado = {
+            'values': values_supermercado
         }
 
+        body_outros = {
+            'values': values_outros
+        }
+
+        # supermercado update
         service.spreadsheets().values().update(
             spreadsheetId=sheet_id,
-            range=range_name,
-            valueInputOption='RAW',  # RAW para valor literal, USER_ENTERED para interpretar como fórmula
-            body=body
+            range=supermercado_line,
+            valueInputOption='RAW',
+            body=body_supermercado
         ).execute()
 
-        # return jsonify({'success': True, 'message': 'Sheets updated successfully.'})
+        # update outros
+        service.spreadsheets().values().update(
+            spreadsheetId=sheet_id,
+            range=outros_line,
+            valueInputOption='RAW',
+            body=body_outros
+        ).execute()
+
+        #--- read
+        # result = service.spreadsheets().values().get(
+        #     spreadsheetId=sheet_id,
+        #     range=range_name
+        # ).execute()
+
+        # context = result.get('values', [])[0][0]
+
         is_success = True
-        message = 'Sheets updated successfully.'
+        message = 'Spreadsheets updated successfully!'
 
     except Exception as err:
 
-        # return jsonify({'success': False, 'message': str(err)})
         is_success = False
         message = str(err)
     
     finally:
 
-        return jsonify({'success': is_success, 'message': message})
+        return jsonify({
+            'success': is_success,
+            'message': message,
+            'context': context
+        })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

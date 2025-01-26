@@ -11,6 +11,18 @@ label {
     margin-bottom: 0 !important;
 }
 
+.toast {
+
+    max-width: 750px !important;
+    width: auto !important;
+
+    & .toast-message {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+}
+
 
 /*___ Table ___*/
 
