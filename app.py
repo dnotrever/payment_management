@@ -200,87 +200,96 @@ def update_spreadsheets():
 
     try:
 
-        load_dotenv()
+        method = request.args.get('method')
 
-        sheet_id = os.getenv('SPREADSHEET_ID')
+        if method.lower() == 'debit':
 
-        def authenticate_sheets():
+            load_dotenv()
 
-            credentials_path = os.path.join(os.path.dirname(__file__), 'credentials.json')
-            token_path = os.path.join(os.path.dirname(__file__), 'token.json')
-            scopes = ['https://www.googleapis.com/auth/spreadsheets']
-            creds = None
+            sheet_id = os.getenv('SPREADSHEET_ID')
 
-            if os.path.exists(token_path):
-                creds = Credentials.from_authorized_user_file(token_path, scopes)
+            def authenticate_sheets():
 
-            if not creds or not creds.valid:
+                credentials_path = os.path.join(os.path.dirname(__file__), 'credentials.json')
+                token_path = os.path.join(os.path.dirname(__file__), 'token.json')
+                scopes = ['https://www.googleapis.com/auth/spreadsheets']
+                creds = None
 
-                if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
-                else:
-                    flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
-                    creds = flow.run_local_server(port=0)
+                if os.path.exists(token_path):
+                    creds = Credentials.from_authorized_user_file(token_path, scopes)
 
-                with open(token_path, 'w') as token:
-                    token.write(creds.to_json())
+                if not creds or not creds.valid:
 
-            return build('sheets', 'v4', credentials=creds)
+                    if creds and creds.expired and creds.refresh_token:
+                        creds.refresh(Request())
+                    else:
+                        flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
+                        creds = flow.run_local_server(port=0)
 
-        service = authenticate_sheets()
+                    with open(token_path, 'w') as token:
+                        token.write(creds.to_json())
 
-        month = request.args.get('month')
-        year = request.args.get('year')
-        supermercado_amount = request.args.get('supermercado')
-        outros_amount = request.args.get('outros')
+                return build('sheets', 'v4', credentials=creds)
 
-        month_column = chr(ord('C') + int(month))
+            service = authenticate_sheets()
 
-        supermercado_line = f'{year}!{month_column}6'
-        outros_line = f'{year}!{month_column}12'
+            month = request.args.get('month')
+            year = request.args.get('year')
+            supermercado_amount = request.args.get('supermercado')
+            outros_amount = request.args.get('outros')
 
-        values_supermercado = [
-            [supermercado_amount]
-        ]
+            month_column = chr(ord('C') + int(month))
 
-        values_outros = [
-            [outros_amount]
-        ]
+            supermercado_line = f'{year}!{month_column}6'
+            outros_line = f'{year}!{month_column}12'
 
-        body_supermercado = {
-            'values': values_supermercado
-        }
+            values_supermercado = [
+                [float(supermercado_amount)]
+            ]
 
-        body_outros = {
-            'values': values_outros
-        }
+            values_outros = [
+                [float(outros_amount)]
+            ]
 
-        # supermercado update
-        service.spreadsheets().values().update(
-            spreadsheetId=sheet_id,
-            range=supermercado_line,
-            valueInputOption='RAW',
-            body=body_supermercado
-        ).execute()
+            body_supermercado = {
+                'values': values_supermercado
+            }
 
-        # update outros
-        service.spreadsheets().values().update(
-            spreadsheetId=sheet_id,
-            range=outros_line,
-            valueInputOption='RAW',
-            body=body_outros
-        ).execute()
+            body_outros = {
+                'values': values_outros
+            }
 
-        #--- read
-        # result = service.spreadsheets().values().get(
-        #     spreadsheetId=sheet_id,
-        #     range=range_name
-        # ).execute()
+            # supermercado update
+            service.spreadsheets().values().update(
+                spreadsheetId=sheet_id,
+                range=supermercado_line,
+                valueInputOption='RAW',
+                body=body_supermercado
+            ).execute()
 
-        # context = result.get('values', [])[0][0]
+            # update outros
+            service.spreadsheets().values().update(
+                spreadsheetId=sheet_id,
+                range=outros_line,
+                valueInputOption='RAW',
+                body=body_outros
+            ).execute()
 
-        is_success = True
-        message = 'Spreadsheets updated successfully!'
+            #--- read
+            # result = service.spreadsheets().values().get(
+            #     spreadsheetId=sheet_id,
+            #     range=range_name
+            # ).execute()
+
+            # context = result.get('values', [])[0][0]
+
+            is_success = True
+            message = 'Spreadsheets updated successfully!'
+        
+        else:
+
+            is_success = False
+            message = 'Update do Sheets com crédito ainda não implementado.'
 
     except Exception as err:
 

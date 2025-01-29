@@ -76,41 +76,87 @@ $(document).ready(function() {
         return _comparisons[comparison];
     }
 
-    function toast({ message = '', status = 'info', close = true }) {
+    function toast(message = '', status = 'load', { close = true, duration = 10000 } = {}) {
 
         let _toastContainer = $('.toast-container');
         let _toast = $('.toast');
         let _message = _toast.find('.toast-message');
         let _btnClose = _toast.find('.btn-close');
 
-        let _status = {
+        let _statusClasses = {
+            load: 'bg-blue-800',
             success: 'bg-green-700',
             error: 'bg-red-700',
             info: 'bg-blue-700',
         }
 
-        !close ?
-            _btnClose.prop('hidden', true) :
-            _btnClose.prop('hidden', false);
+        if (status == 'load') {
+            _message.before('<i class="fa fa-spinner text-white me-3 fs-4 animate-spin"></i>');
+        } else {
+            _message.prev().remove();
+        }
+
+        _btnClose.prop('hidden', (!close || status == 'load'));
 
         _toast.removeClass(function(index, className) { return (className.match(/\bbg-\S+/g) || []).join(' '); });
-        _toast.addClass(_status[status])
+        _toast.addClass(_statusClasses[status] || _statusClasses['info']);
 
         _message.text(message);
 
         _toastContainer.prop('hidden', false);
-        _toast.toast('show');
+
+        const toastInstance = new bootstrap.Toast(_toast[0], { autohide: false });
+        toastInstance.show();
+
+        if (duration > 0 && status !== 'load') {
+            setTimeout(() => _toast.toast('hide'), duration);
+        }
 
     }
 
-    // api functions
+    //
+    function paymentFields(element) {
+
+        return {
+            category: element.find('td').eq(0).text().trim(),
+            date: element.find('td').eq(1).text().trim(),
+            value: element.find('td').eq(2).data('float'),
+            institution: element.find('td').eq(3).text().trim(),
+            method: element.find('td').eq(4).text().trim(),
+            installments: element.find('td').eq(5).text().trim(),
+            description: element.find('td').eq(6).text().trim(),
+        }
+
+    }
+
+    // critério para itaú crédito
+    function itauCondition(date, institution, method) {
+
+        let _itauCondition = (
+            institution == 'Itaú' &&
+            method == 'Credit' &&
+            (compareTwoDates(date, `10/${currentMonth}/${currentYear}`))
+        );
+
+        return _itauCondition;
+
+    }
+
+    // verifica se o pagamento é debito ou crédito do mês corrente
+    function debitOrCreditCurrent(date, institution, method, installments) {
+
+        return ((method == 'Debit') || (method == 'Credit' && installments.includes('/')) || itauCondition(date, institution, method))
+
+    }
+
+    //-------|  A P I   F U N C T I O N S
 
     async function loadCategories(element) {
 
         await $.get('/categories', function(data) {
             $(element).empty();
             data.forEach(category => {
-                $(element).append(`<option value="${category.alias}">${category.name}</option>`);
+                $(element).append(`<option value="${category.alias}" ${category.alias == 'supermercado' ? 'selected' : ''}>${category.name}</option>`);
             });
         });
 
@@ -184,27 +230,17 @@ $(document).ready(function() {
 
         $('#payments-table-body tr').each(function() {
 
-            let _date = $(this).find('td').eq(1).text().trim();
-            let _value = $(this).find('td').eq(2).data('float');
-            let _institution = $(this).find('td').eq(3).text().trim();
-            let _method = $(this).find('td').eq(4).text().trim();
-            let _installments = $(this).find('td').eq(5).text().trim();
-            // let _description = $(this).find('td').eq(6).text().trim();
+            let { category, date, value, institution, method, installments, description } = paymentFields($(this));
 
-            let _itauCondition = (
-                _institution == 'Itaú' &&
-                // _description.includes('Maiara') &&
-                _method == 'Credit' &&
-                (compareTwoDates(_date, `10/${currentMonth}/${currentYear}`))
-            );
-
-            if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _itauCondition) {
-                _amountMonth += _value;
+            if (debitOrCreditCurrent(date, institution, method, installments)) {
+                _amountMonth += value;
             }
 
-            if (_installments.includes('/')) {
+            let _itauCondition = itauCondition(date, institution, method);
+
+            if (installments.includes('/')) {
                 $(this).removeClass('text-blue-700').addClass('text-red-500');
-            } else if (!_installments.includes('-') && !_itauCondition) {
+            } else if (!installments.includes('-') && !_itauCondition) {
                 $(this).removeClass('text-blue-700').addClass('text-gray-500');
             }
 
@@ -218,51 +254,43 @@ $(document).ready(function() {
 
     }
 
-    async function updateSpreadSheets(date) {
+    async function updateSpreadSheets(date, method) {
 
-        toast({
-            message: 'Updating Spreadsheets...',
-            status: 'info',
-            close: false
-        });
+        toast('Updating Spreadsheets...', 'load');
 
         let _month = date ? parseInt(date.split('/')[1]) : parseInt(currentMonth);
         let _year = date ? date.split('/')[2] : currentYear;
+        
         let _supermercadoAmount = 0.00;
         let _outrosAmount = 0.00;
 
         $('#payments-table-body tr').each(function() {
 
-            let _category = $(this).find('td').eq(0).text().trim();
-            let _value = $(this).find('td').eq(2).data('float');
-            let _description = $(this).find('td').eq(6).text().trim();
+            let { category, date, value, institution, method, installments, description } = paymentFields($(this));
 
-            if (_category.toLowerCase() == 'supermercado') {
-                _supermercadoAmount += _value;
-            } 
+            if (category.toLowerCase() == 'supermercado' && debitOrCreditCurrent(date, institution, method, installments)) {
+                _supermercadoAmount += value;
+            }
 
-            if (_description.toLowerCase() == 'outros') {
-                _outrosAmount += _value;
-                console.log(_description)
+            if (description.toLowerCase() == 'outros' && debitOrCreditCurrent(date, institution, method, installments)) {
+                _outrosAmount += value;
             } 
             
         });
 
         let _data = {
+            'method': method,
             'month': _month,
             'year': _year,
-            'supermercado': formatCurrency(_supermercadoAmount),
-            'outros': formatCurrency(_outrosAmount),
+            'supermercado': parseFloat(_supermercadoAmount),
+            'outros': parseFloat(_outrosAmount),
         };
 
         $.get('/update-spreadsheets', _data, function(data) {
 
             let _status = data.success ? 'success' : 'error';
 
-            toast({
-                message: data.message,
-                status: _status,
-            })
+            toast(data.message, _status)
             
         });
 
@@ -310,26 +338,17 @@ $(document).ready(function() {
 
         _paymentId = $(this).data('id');
 
-        let _paymentDate = $(this).find('td').eq(1).text().trim();
-        let _paymentInstallments = $(this).find('td').eq(5).text().trim();
+        let { category, date, value, institution, method, installments, description } = paymentFields($(this));
 
-
-        let _institution = $(this).find('td').eq(3).text().trim();
-        let _method = $(this).find('td').eq(4).text().trim();
-
-        let _itauCondition = (
-            _institution == 'Itaú' &&
-            _method == 'Credit' &&
-            (compareTwoDates(_paymentDate, `10/${currentMonth}/${currentYear}`))
-        );
+        let _itauCondition = itauCondition(date, institution, method);
 
         let _currentDate = (currentMonth.toString().padStart(2, '0') + '/' + currentYear).trim();
-        let _paymentDateFormatted = (_paymentDate.substring(3)).trim();
+        let _paymentDateFormatted = (date.substring(3)).trim();
         let _isSameDate = _currentDate.includes(_paymentDateFormatted);
 
-        if ( (_paymentInstallments.includes('/') || !_itauCondition) && !_isSameDate) {
-            currentYear = parseInt(_paymentDate.split('/')[2]);
-            currentMonth = parseInt(_paymentDate.split('/')[1]);
+        if ( (installments.includes('/') || !_itauCondition) && !_isSameDate) {
+            currentYear = parseInt(date.split('/')[2]);
+            currentMonth = parseInt(date.split('/')[1]);
             return loadPayments(currentYear, currentMonth);
         }
 
@@ -375,16 +394,12 @@ $(document).ready(function() {
         closeModal('#edit-payment-modal');
     });
 
-    //------- F O R M S
+    //-------|  F O R M S
 
     // insert payment
     $('#payment-form').submit(function(event) {
 
-        toast({
-            message: 'Inserting payment...',
-            status: 'info',
-            close: false
-        });
+        toast('Inserting payment...', 'load');
 
         event.preventDefault();
 
@@ -408,10 +423,7 @@ $(document).ready(function() {
         });
 
         if (_form_invalid) {
-            return toast({
-                message: 'Invalid form.',
-                status: 'error',
-            });
+            return toast('The form is invalid.', 'error');
         }
 
         const data = {
@@ -432,11 +444,8 @@ $(document).ready(function() {
             success: async function() {
                 await loadPayments(currentYear, currentMonth);
                 $('#payment-form')[0].reset();
-                updateSpreadSheets(data.date);
-                toast({
-                    message: 'Payment inserted successfully!',
-                    status: 'success',
-                });
+                updateSpreadSheets(data.date, data.method);
+                toast('Payment inserted successfully!', 'success');
             }
         });
 
@@ -444,6 +453,7 @@ $(document).ready(function() {
 
     });
 
+    // insert category
     $('#category-form').submit(function(event) {
 
         event.preventDefault();
@@ -465,6 +475,7 @@ $(document).ready(function() {
 
     });
 
+    // insert institution
     $('#institution-form').submit(function(event) {
 
         event.preventDefault();
@@ -489,11 +500,7 @@ $(document).ready(function() {
     // update payment
     $('#edit-payment-form').submit(function(event) {
 
-        toast({
-            message: 'Updating payment...',
-            status: 'info',
-            close: false
-        });
+        toast('Updating payment...', 'load');
 
         event.preventDefault();
 
@@ -514,11 +521,8 @@ $(document).ready(function() {
             data: JSON.stringify(data),
             success: async function() {
                 await loadPayments(currentYear, currentMonth);
-                updateSpreadSheets(data.date);
-                toast({
-                    message: 'Payment inserted successfully!',
-                    status: 'success',
-                });
+                updateSpreadSheets(data.date, data.method);
+                toast('Payment inserted successfully!', 'success');
             }
         });
 
@@ -529,13 +533,10 @@ $(document).ready(function() {
     // delete payment
     $('#delete-payment').on('click', function() {
 
-        toast({
-            message: 'Deleting payment...',
-            status: 'info',
-            close: false
-        });
+        toast('Deleting payment...', 'load');
 
         let _date = $(this).closest('#edit-payment-modal').find('#edit-date').val();
+        let _method = $(this).closest('#edit-payment-modal').find('#edit-method').val();
 
         $.ajax({
             type: 'DELETE',
@@ -543,11 +544,8 @@ $(document).ready(function() {
             contentType: 'application/json',
             success: async function() {
                 await loadPayments(currentYear, currentMonth);
-                updateSpreadSheets(_date);
-                toast({
-                    message: 'Payment deleted successfully!',
-                    status: 'success',
-                });
+                updateSpreadSheets(_date, _method);
+                toast('Payment deleted successfully!', 'success');
             }
         });
 
@@ -577,6 +575,7 @@ $(document).ready(function() {
         loadPayments(currentYear, currentMonth);
     });
 
+    // mostra ou esconde botão de limpar caixa de filtro conforme usuário digita
     $('#payment-filter-value').on('input', function() {
         let _has_term = $(this).val() ? true : false;
         $('#payment-filter-clear').attr('hidden', !_has_term);
@@ -590,19 +589,7 @@ $(document).ready(function() {
 
         $('#payments-table-body tr').each(function() {
 
-            let _date = $(this).find('td').eq(1).text().trim();
-            let _value = $(this).find('td').eq(2).data('float');
-            let _institution = $(this).find('td').eq(3).text().trim();
-            let _method = $(this).find('td').eq(4).text().trim();
-            let _installments = $(this).find('td').eq(5).text().trim();
-            // let _description = $(this).find('td').eq(6).text().trim();
-
-            let _itauCondition = (
-                _institution == 'Itaú' &&
-                // _description.includes('Maiara') &&
-                _method == 'Credit' &&
-                (compareTwoDates(_date, `10/${currentMonth}/${currentYear}`))
-            );
+            let { category, date, value, institution, method, installments, description } = paymentFields($(this));
 
             if (_filter_value) {
 
@@ -615,7 +602,7 @@ $(document).ready(function() {
                         _filter_check += 1;
                 })
                 
-                let _hide_line = _filter_check >= _terms.length ? false : true;
+                let _hide_line = (_filter_check >= _terms.length && debitOrCreditCurrent(date, institution, method, installments)) ? false : true;
 
                 $(this).attr('hidden', _hide_line);
                     
@@ -626,9 +613,9 @@ $(document).ready(function() {
                 $('#payment-filter-clear').attr('hidden', true);
             }
 
-            if ($(this).attr('hidden') === undefined && ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _itauCondition)) {
-                _amountMonth += _value;
-            }   
+            if ($(this).attr('hidden') === undefined && debitOrCreditCurrent(date, institution, method, installments)) {
+                _amountMonth += value;
+            }
 
         });
 
@@ -648,22 +635,10 @@ $(document).ready(function() {
 
             $(this).attr('hidden', false);
 
-            let _date = $(this).find('td').eq(1).text().trim();
-            let _value = $(this).find('td').eq(2).data('float');
-            let _institution = $(this).find('td').eq(3).text().trim();
-            let _method = $(this).find('td').eq(4).text().trim();
-            let _installments = $(this).find('td').eq(5).text().trim();
-            // let _description = $(this).find('td').eq(6).text().trim();
+            let { category, date, value, institution, method, installments, description } = paymentFields($(this));
 
-            let _itauCondition = (
-                _institution == 'Itaú' &&
-                // _description.includes('Maiara') &&
-                _method == 'Credit' &&
-                (compareTwoDates(_date, `10/${currentMonth}/${currentYear}`))
-            );
-
-            if ((_method == 'Debit') || (_method == 'Credit' && _installments.includes('/')) || _itauCondition) {
-                _amountMonth += _value;
+            if (debitOrCreditCurrent(date, institution, method, installments)) {
+                _amountMonth += value;
             }
 
         });
@@ -710,17 +685,6 @@ $(document).ready(function() {
         }
     });
 
-    // $('#category').on('change', function() {
-    //     let _category = $(this).val();
-    //     $('#institution').val('itau');
-    //     // if (['aluguel', 'light', 'agua', 'internet', ''].includes(_category)) {
-    //     //     $('#institution').val('itau');
-    //     // } else {
-    //     //     $('#institution').val('caju');
-    //     // }
-    //     $('#institution').trigger('change');
-    // });
-
     $('#payment-database').on('change', function() {
 
         // const data = {
@@ -734,10 +698,7 @@ $(document).ready(function() {
         //     data: JSON.stringify(data),
         //     success: async function() {
         //         await loadPayments(currentYear, currentMonth);
-        //         toast({
-        //             message: 'The database has been changed.',
-        //             status: 'success',
-        //         });
+        //         toast('The database has been changed.', 'success');
         //     }
         // });
 
@@ -747,7 +708,7 @@ $(document).ready(function() {
 
     $('#update-spreadsheets').on('click', async function() {
 
-        await updateSpreadSheets();
+        await updateSpreadSheets('01/01/2025', 'Debit');
 
     });
 
