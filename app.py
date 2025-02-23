@@ -2,17 +2,15 @@ import os
 import locale
 import unidecode
 from datetime import datetime
+from dotenv import load_dotenv
 from dateutil.relativedelta import relativedelta
 from models import app, db, db_name, Category, Institution, Payment
 from flask import render_template, request, jsonify
 
+import utils as ut
+
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
-from dotenv import load_dotenv
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
 
 @app.route('/')
 def index():
@@ -140,23 +138,20 @@ def get_payments(year, month):
                 response.append(data)
 
             elif current_date <= installment_limit and current_date >= payment_date:
-                date_diff = lambda data1, data2: (datetime.strptime(data2, '%Y-%m') - datetime.strptime(data1, '%Y-%m')).days // 30
                 data['value'] = payment_value / payment_installments
-                data['installments'] = str(date_diff(payment_date, current_date)) + ' / ' + str(payment_installments)
+                data['installments'] = ut.date_diff(payment_date, current_date, type='str') + ' / ' + str(payment_installments)
                 response.append(data)
 
         else:
 
             if payment_date == current_date:
                 data['value'] = payment_value / payment_installments
-                # data['installments'] = '1 / ' + str(payment_installments)
                 data['installments'] = '1 / ' + str(payment_installments) if payment_installments > 1 else payment_installments
                 response.append(data)
 
             elif current_date <= installment_limit and current_date >= payment_date:
-                date_diff = lambda data1, data2: (datetime.strptime(data2, '%Y-%m') - datetime.strptime(data1, '%Y-%m')).days // 30
                 data['value'] = payment_value / payment_installments
-                data['installments'] = str(date_diff(payment_date, current_date) + 1) + ' / ' + str(payment_installments)
+                data['installments'] = ut.date_diff(payment_date, current_date, type='str') + ' / ' + str(payment_installments)
                 response.append(data)
         
     response_sorted = sorted(response, key=lambda x: datetime.strptime(x['date'], '%d/%m/%Y'), reverse=True)
@@ -208,31 +203,6 @@ def update_spreadsheets():
 
             sheet_id = os.getenv('SPREADSHEET_ID')
 
-            def authenticate_sheets():
-
-                credentials_path = os.path.join(os.path.dirname(__file__), 'credentials.json')
-                token_path = os.path.join(os.path.dirname(__file__), 'token.json')
-                scopes = ['https://www.googleapis.com/auth/spreadsheets']
-                creds = None
-
-                if os.path.exists(token_path):
-                    creds = Credentials.from_authorized_user_file(token_path, scopes)
-
-                if not creds or not creds.valid:
-
-                    if creds and creds.expired and creds.refresh_token:
-                        creds.refresh(Request())
-                    else:
-                        flow = InstalledAppFlow.from_client_secrets_file(credentials_path, scopes)
-                        creds = flow.run_local_server(port=0)
-
-                    with open(token_path, 'w') as token:
-                        token.write(creds.to_json())
-
-                return build('sheets', 'v4', credentials=creds)
-
-            service = authenticate_sheets()
-
             month = request.args.get('month')
             year = request.args.get('year')
             supermercado_amount = request.args.get('supermercado')
@@ -260,31 +230,20 @@ def update_spreadsheets():
             }
 
             # supermercado update
-            service.spreadsheets().values().update(
-                spreadsheetId=sheet_id,
-                range=supermercado_line,
-                valueInputOption='RAW',
-                body=body_supermercado
-            ).execute()
+            update_supermercado = ut.google_sheets_update(sheet_id, supermercado_line, body_supermercado)
 
             # update outros
-            service.spreadsheets().values().update(
-                spreadsheetId=sheet_id,
-                range=outros_line,
-                valueInputOption='RAW',
-                body=body_outros
-            ).execute()
+            update_outros = ut.google_sheets_update(sheet_id, outros_line, body_outros)
 
-            #--- read
-            # result = service.spreadsheets().values().get(
-            #     spreadsheetId=sheet_id,
-            #     range=range_name
-            # ).execute()
+            if (update_supermercado[0] and update_outros[0]):
 
-            # context = result.get('values', [])[0][0]
+                is_success = True
+                message = 'Spreadsheets updated successfully!'
 
-            is_success = True
-            message = 'Spreadsheets updated successfully!'
+            else:
+
+                is_success = False
+                message = 'An error occurred...'
         
         else:
 

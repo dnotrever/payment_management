@@ -1,19 +1,36 @@
 $(document).ready(function() {
 
-    // variables
+    //-------|  V A R I A B L E S
 
     const currentDate = new Date();
+
+    const monthNames = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
 
     let currentYear = currentDate.getFullYear();
     let currentMonth = currentDate.getMonth() + 1;
 
     let _paymentId;
 
-    const monthNames = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
+    function bodyPaymentsList(payment) {
 
-    // helpers
+        return `
+            <tr class="text-blue-700" data-id="${payment.id}">
+                <td class="flex justify-center w-100 p-2" data-alias="${payment.category_alias}"><p>${payment.category_name}</p></td>
+                <td class="p-2">${payment.date}</td>
+                <td class="p-2" data-float="${payment.value}">${formatCurrency(payment.value)}</td>
+                <td class="p-2" data-alias="${payment.institution_alias}">${payment.institution_name}</td>
+                <td class="p-2">${payment.method}</td>
+                <td class="p-2">${payment.installments == 0 ? '-' : payment.installments}</td>
+                <td class="p-2 text-ellipsis text-nowrap">${payment.description == 0 ? '-' : payment.description}</td>
+            </tr>
+        `
+        
+    }
+
+
+    //-------|  H E L P E R S
 
     function formatMask(element, mode) {
         if (mode == 'currency') {
@@ -76,6 +93,7 @@ $(document).ready(function() {
         return _comparisons[comparison];
     }
 
+    // toast messsages
     function toast(message = '', status = 'load', { close = true, duration = 10000 } = {}) {
 
         let _toastContainer = $('.toast-container');
@@ -149,6 +167,7 @@ $(document).ready(function() {
 
     }
 
+
     //-------|  A P I   F U N C T I O N S
 
     async function loadCategories(element) {
@@ -187,43 +206,7 @@ $(document).ready(function() {
             $('#payments-table-body').empty();
 
             data.forEach(payment => {
-
-                $('#payments-table-body').append(`
-
-                    <tr class="text-blue-700" data-id="${payment.id}">
-
-                        <td class="flex justify-center w-100 p-2" data-alias="${payment.category_alias}">
-                            <p>${payment.category_name}</p>
-                        </td>
-
-                        <td class="p-2">
-                            ${payment.date}
-                        </td>
-
-                        <td class="p-2" data-float="${payment.value}">
-                            ${formatCurrency(payment.value)}
-                        </td>
-
-                        <td class="p-2" data-alias="${payment.institution_alias}">
-                            ${payment.institution_name}
-                        </td>
-
-                        <td class="p-2">
-                            ${payment.method}
-                        </td>
-
-                        <td class="p-2">
-                            ${payment.installments == 0 ? '-' : payment.installments}
-                        </td>
-
-                        <td class="p-2 text-ellipsis text-nowrap">
-                            ${payment.description == 0 ? '-' : payment.description}
-                        </td>
-
-                    </tr>
-
-                `);
-
+                $('#payments-table-body').append(bodyPaymentsList(payment));
             });
 
         });
@@ -296,7 +279,8 @@ $(document).ready(function() {
 
     }
 
-    // modal
+
+    //-------|  M O D A L
 
     function openModal(modalId) {
         $(modalId).removeClass('hidden');
@@ -393,6 +377,7 @@ $(document).ready(function() {
     $('#close-edit-payment-modal').click(function() {
         closeModal('#edit-payment-modal');
     });
+
 
     //-------|  F O R M S
 
@@ -708,7 +693,7 @@ $(document).ready(function() {
 
     $('#update-spreadsheets').on('click', async function() {
 
-        await updateSpreadSheets('01/01/2025', 'Debit');
+        await updateSpreadSheets(`01/${currentMonth}/${currentYear}`, 'Debit');
 
     });
 
@@ -748,7 +733,8 @@ $(document).ready(function() {
         }
     });
 
-    // plugins
+
+    //-------|  P L U G I N S
 
     function useDatepicker(element) {
         datepicker(element, {
@@ -761,7 +747,8 @@ $(document).ready(function() {
         });
     }
 
-    // first initialization
+
+    //-------|  F I R S T   I N I T I A L I Z A T I O N
 
     $('input').on('input', function() {
         if ($(this).removeClass('is-invalid'));
