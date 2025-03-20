@@ -235,7 +235,7 @@ def update_spreadsheets():
             # update outros
             update_outros = ut.google_sheets_update(sheet_id, outros_line, body_outros)
 
-            if (update_supermercado[0] and update_outros[0]):
+            if (update_supermercado[0] or update_outros[0]):
 
                 is_success = True
                 message = 'Spreadsheets updated successfully!'
@@ -243,8 +243,10 @@ def update_spreadsheets():
             else:
 
                 is_success = False
-                message = 'An error occurred...'
-        
+
+                if update_supermercado[1] or update_outros[1]:
+                    message = update_supermercado[1] or update_outros[1]
+                    
         else:
 
             is_success = False

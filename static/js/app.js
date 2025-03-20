@@ -429,7 +429,9 @@ $(document).ready(function() {
             success: async function() {
                 await loadPayments(currentYear, currentMonth);
                 $('#payment-form')[0].reset();
-                updateSpreadSheets(data.date, data.method);
+                if ($('#payment-title').text() == 'Casa') {
+                    updateSpreadSheets(data.date, data.method);
+                }
                 toast('Payment inserted successfully!', 'success');
             }
         });
@@ -506,7 +508,9 @@ $(document).ready(function() {
             data: JSON.stringify(data),
             success: async function() {
                 await loadPayments(currentYear, currentMonth);
-                updateSpreadSheets(data.date, data.method);
+                if ($('#payment-title').text() == 'Casa') {
+                    updateSpreadSheets(data.date, data.method);
+                }
                 toast('Payment inserted successfully!', 'success');
             }
         });
@@ -529,7 +533,9 @@ $(document).ready(function() {
             contentType: 'application/json',
             success: async function() {
                 await loadPayments(currentYear, currentMonth);
-                updateSpreadSheets(_date, _method);
+                if ($('#payment-title').text() == 'Casa') {
+                    updateSpreadSheets(_date, _method);
+                }
                 toast('Payment deleted successfully!', 'success');
             }
         });
@@ -661,7 +667,7 @@ $(document).ready(function() {
     $('#category').on('change', function() {
         let _category = $(this).val();
         let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua'];
-        if (!_categories.includes(_category)) {
+        if (!_categories.includes(_category) && ($('#payment-title').text() == 'Casa') ) {
             $('#description').val('Outros');
             $('#description').prop('disabled', true);
         } else {
