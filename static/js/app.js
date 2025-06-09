@@ -666,7 +666,7 @@ $(document).ready(function() {
 
     $('#category').on('change', function() {
         let _category = $(this).val();
-        let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua'];
+        let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua', 'gas'];
         if (!_categories.includes(_category) && ($('#payment-title').text() == 'Casa') ) {
             $('#description').val('Outros');
             $('#description').prop('disabled', true);
