@@ -1,4 +1,4 @@
-$(document).ready(function() {
+$(document).ready(function () {
 
     //-------|  V A R I A B L E S
 
@@ -26,7 +26,7 @@ $(document).ready(function() {
                 <td class="p-2 text-ellipsis text-nowrap">${payment.description == 0 ? '-' : payment.description}</td>
             </tr>
         `
-        
+
     }
 
 
@@ -55,7 +55,7 @@ $(document).ready(function() {
     }
 
     function handleInstallments(method, installments) {
-        $(method).change(function() {
+        $(method).change(function () {
             if ($(method).val() == 'Debit') {
                 $(installments).attr('disabled', true);
                 $(installments).val('');
@@ -67,7 +67,7 @@ $(document).ready(function() {
     }
 
     function handleValue(element) {
-        $(element).on('focusout', function() {
+        $(element).on('focusout', function () {
             if (!$(this).val().includes(',')) {
                 $(this).val($(this).val() + ',00');
             }
@@ -81,7 +81,7 @@ $(document).ready(function() {
         return term.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
     }
 
-    function compareTwoDates(date1, date2, comparison='menorIgual') {
+    function compareTwoDates(date1, date2, comparison = 'menorIgual') {
         const [day1, month1, year1] = date1.split('/').map(Number);
         const [day2, month2, year2] = date2.split('/').map(Number);
         const dateObj1 = new Date(year1, month1 - 1, day1);
@@ -116,7 +116,7 @@ $(document).ready(function() {
 
         _btnClose.prop('hidden', (!close || status == 'load'));
 
-        _toast.removeClass(function(index, className) { return (className.match(/\bbg-\S+/g) || []).join(' '); });
+        _toast.removeClass(function (index, className) { return (className.match(/\bbg-\S+/g) || []).join(' '); });
         _toast.addClass(_statusClasses[status] || _statusClasses['info']);
 
         _message.text(message);
@@ -172,7 +172,7 @@ $(document).ready(function() {
 
     async function loadCategories(element) {
 
-        await $.get('/categories', function(data) {
+        await $.get('/categories', function (data) {
             $(element).empty();
             data.forEach(category => {
                 $(element).append(`<option value="${category.alias}" ${category.alias == 'supermercado' ? 'selected' : ''}>${category.name}</option>`);
@@ -183,7 +183,7 @@ $(document).ready(function() {
 
     async function loadInstitutions(element) {
 
-        await $.get('/institutions', function(data) {
+        await $.get('/institutions', function (data) {
 
             $(element).empty();
 
@@ -201,7 +201,7 @@ $(document).ready(function() {
 
         $('#current-month').text(`${monthNames[month - 1]} - ${year}`);
 
-        await $.get(`/payments/${year}/${month}`, function(data) {
+        await $.get(`/payments/${year}/${month}`, function (data) {
 
             $('#payments-table-body').empty();
 
@@ -211,7 +211,7 @@ $(document).ready(function() {
 
         });
 
-        $('#payments-table-body tr').each(function() {
+        $('#payments-table-body tr').each(function () {
 
             let { category, date, value, institution, method, installments, description } = paymentFields($(this));
 
@@ -232,7 +232,7 @@ $(document).ready(function() {
         $('#amount-month').text(formatCurrency(_amountMonth));
 
         if ($('#payment-filter-value').val() != '') {
-            $('#payment-filter-search').trigger('click'); 
+            $('#payment-filter-search').trigger('click');
         }
 
     }
@@ -243,11 +243,11 @@ $(document).ready(function() {
 
         let _month = date ? parseInt(date.split('/')[1]) : parseInt(currentMonth);
         let _year = date ? date.split('/')[2] : currentYear;
-        
+
         let _supermercadoAmount = 0.00;
         let _outrosAmount = 0.00;
 
-        $('#payments-table-body tr').each(function() {
+        $('#payments-table-body tr').each(function () {
 
             let { category, date, value, institution, method, installments, description } = paymentFields($(this));
 
@@ -257,8 +257,8 @@ $(document).ready(function() {
 
             if (description.toLowerCase() == 'outros' && debitOrCreditCurrent(date, institution, method, installments)) {
                 _outrosAmount += value;
-            } 
-            
+            }
+
         });
 
         let _data = {
@@ -269,12 +269,12 @@ $(document).ready(function() {
             'outros': parseFloat(_outrosAmount),
         };
 
-        $.get('/update-spreadsheets', _data, function(data) {
+        $.get('/update-spreadsheets', _data, function (data) {
 
             let _status = data.success ? 'success' : 'error';
 
             toast(data.message, _status)
-            
+
         });
 
     }
@@ -291,7 +291,7 @@ $(document).ready(function() {
         $(modalId).find('input').val('')
     }
 
-    $('#open-payment-modal').click(async function(event) {
+    $('#open-payment-modal').click(async function (event) {
 
         await loadCategories('#category');
         await loadInstitutions('#institution');
@@ -309,16 +309,16 @@ $(document).ready(function() {
 
     });
 
-    $('#open-category-modal').click(function(event) {
+    $('#open-category-modal').click(function (event) {
         openModal('#category-modal');
     });
 
-    $('#open-institution-modal').click(function(event) {
+    $('#open-institution-modal').click(function (event) {
         openModal('#institution-modal');
     });
 
     // abre o modal de um pagamento (para edição ou exclusão)
-    $('#payments-table-body').on('click', 'tr', async function() {
+    $('#payments-table-body').on('click', 'tr', async function () {
 
         _paymentId = $(this).data('id');
 
@@ -330,7 +330,7 @@ $(document).ready(function() {
         let _paymentDateFormatted = (date.substring(3)).trim();
         let _isSameDate = _currentDate.includes(_paymentDateFormatted);
 
-        if ( (installments.includes('/') || !_itauCondition) && !_isSameDate) {
+        if ((installments.includes('/') || !_itauCondition) && !_isSameDate) {
             currentYear = parseInt(date.split('/')[2]);
             currentMonth = parseInt(date.split('/')[1]);
             return loadPayments(currentYear, currentMonth);
@@ -339,7 +339,7 @@ $(document).ready(function() {
         await loadCategories('#edit-category');
         await loadInstitutions('#edit-institution');
 
-        await $.get(`/payment/${_paymentId}`, function(payment) {
+        await $.get(`/payment/${_paymentId}`, function (payment) {
             $('#edit-category').val(payment.category_alias);
             $('#edit-date').val(payment.date);
             $('#edit-value').val(formatCurrency(payment.value));
@@ -360,21 +360,45 @@ $(document).ready(function() {
 
         openModal('#edit-payment-modal');
 
+        $(document).ready(function () {
+            $('#edit-category').on('change', function () {
+                let _category = $(this).val();
+                let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua', 'gas'];
+                if (!_categories.includes(_category) && ($('#payment-title').text() == 'Casa')) {
+                    $('#edit-description').val('Outros');
+                    $('#edit-description').prop('disabled', true);
+                } else {
+                    $('#edit-description').val('');
+                    $('#edit-description').prop('disabled', false);
+                }
+            });
+        })
+
+        let _category = $(this).val();
+        let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua', 'gas'];
+        if (!_categories.includes(_category) && ($('#payment-title').text() == 'Casa')) {
+            $('#edit-description').val('Outros');
+            $('#edit-description').prop('disabled', true);
+        } else {
+            $('#edit-description').val('');
+            $('#edit-description').prop('disabled', false);
+        }
+
     });
 
-    $('#close-payment-modal').click(function() {
+    $('#close-payment-modal').click(function () {
         closeModal('#payment-modal');
     });
 
-    $('#close-category-modal').click(function() {
+    $('#close-category-modal').click(function () {
         closeModal('#category-modal');
     });
 
-    $('#close-institution-modal').click(function() {
+    $('#close-institution-modal').click(function () {
         closeModal('#institution-modal');
     });
 
-    $('#close-edit-payment-modal').click(function() {
+    $('#close-edit-payment-modal').click(function () {
         closeModal('#edit-payment-modal');
     });
 
@@ -382,7 +406,7 @@ $(document).ready(function() {
     //-------|  F O R M S
 
     // insert payment
-    $('#payment-form').submit(function(event) {
+    $('#payment-form').submit(function (event) {
 
         toast('Inserting payment...', 'load');
 
@@ -390,7 +414,7 @@ $(document).ready(function() {
 
         let _form_invalid = false;
 
-        $(this).find('input', 'select').each(function() {
+        $(this).find('input', 'select').each(function () {
 
             let _id = $(this).attr('id');
 
@@ -426,7 +450,7 @@ $(document).ready(function() {
             url: '/payments',
             contentType: 'application/json',
             data: JSON.stringify(data),
-            success: async function() {
+            success: async function () {
                 await loadPayments(currentYear, currentMonth);
                 $('#payment-form')[0].reset();
                 if ($('#payment-title').text() == 'Casa') {
@@ -441,7 +465,7 @@ $(document).ready(function() {
     });
 
     // insert category
-    $('#category-form').submit(function(event) {
+    $('#category-form').submit(function (event) {
 
         event.preventDefault();
 
@@ -454,7 +478,7 @@ $(document).ready(function() {
             url: '/categories',
             contentType: 'application/json',
             data: JSON.stringify(data),
-            success: function() {
+            success: function () {
                 loadCategories('#category');
                 closeModal('#category-modal');
             }
@@ -463,7 +487,7 @@ $(document).ready(function() {
     });
 
     // insert institution
-    $('#institution-form').submit(function(event) {
+    $('#institution-form').submit(function (event) {
 
         event.preventDefault();
 
@@ -476,7 +500,7 @@ $(document).ready(function() {
             url: '/institutions',
             contentType: 'application/json',
             data: JSON.stringify(data),
-            success: function() {
+            success: function () {
                 loadInstitutions('#institution');
                 closeModal('#institution-modal');
             }
@@ -485,7 +509,7 @@ $(document).ready(function() {
     });
 
     // update payment
-    $('#edit-payment-form').submit(function(event) {
+    $('#edit-payment-form').submit(function (event) {
 
         toast('Updating payment...', 'load');
 
@@ -506,7 +530,7 @@ $(document).ready(function() {
             url: `/payment/${_paymentId}`,
             contentType: 'application/json',
             data: JSON.stringify(data),
-            success: async function() {
+            success: async function () {
                 await loadPayments(currentYear, currentMonth);
                 if ($('#payment-title').text() == 'Casa') {
                     updateSpreadSheets(data.date, data.method);
@@ -520,7 +544,7 @@ $(document).ready(function() {
     });
 
     // delete payment
-    $('#delete-payment').on('click', function() {
+    $('#delete-payment').on('click', function () {
 
         toast('Deleting payment...', 'load');
 
@@ -531,7 +555,7 @@ $(document).ready(function() {
             type: 'DELETE',
             url: `/payment/${_paymentId}`,
             contentType: 'application/json',
-            success: async function() {
+            success: async function () {
                 await loadPayments(currentYear, currentMonth);
                 if ($('#payment-title').text() == 'Casa') {
                     updateSpreadSheets(_date, _method);
@@ -542,11 +566,11 @@ $(document).ready(function() {
 
         closeModal('#edit-payment-modal');
 
-    }); 
+    });
 
     // mouse and keyboard events
 
-    $('#prev-month').click(function() {
+    $('#prev-month').click(function () {
         if (currentMonth === 1) {
             currentMonth = 12;
             currentYear--;
@@ -556,7 +580,7 @@ $(document).ready(function() {
         loadPayments(currentYear, currentMonth);
     });
 
-    $('#next-month').click(function() {
+    $('#next-month').click(function () {
         if (currentMonth === 12) {
             currentMonth = 1;
             currentYear++;
@@ -567,18 +591,18 @@ $(document).ready(function() {
     });
 
     // mostra ou esconde botão de limpar caixa de filtro conforme usuário digita
-    $('#payment-filter-value').on('input', function() {
+    $('#payment-filter-value').on('input', function () {
         let _has_term = $(this).val() ? true : false;
         $('#payment-filter-clear').attr('hidden', !_has_term);
     });
 
-    $('#payment-filter-search').click(function() {
+    $('#payment-filter-search').click(function () {
 
         let _filter_value = $('#payment-filter-value').val();
 
         let _amountMonth = 0.00;
 
-        $('#payments-table-body tr').each(function() {
+        $('#payments-table-body tr').each(function () {
 
             let { category, date, value, institution, method, installments, description } = paymentFields($(this));
 
@@ -588,15 +612,15 @@ $(document).ready(function() {
                 let _terms = _filter_value.split(';');
                 let _filter_check = 0;
 
-                _terms.forEach(function(element) {
+                _terms.forEach(function (element) {
                     if (formatSearchTerm(_line_text).includes(formatSearchTerm(element)))
                         _filter_check += 1;
                 })
-                
+
                 let _hide_line = (_filter_check >= _terms.length && debitOrCreditCurrent(date, institution, method, installments)) ? false : true;
 
                 $(this).attr('hidden', _hide_line);
-                    
+
                 $('#payment-filter-clear').attr('hidden', false);
 
             } else {
@@ -614,7 +638,7 @@ $(document).ready(function() {
 
     });
 
-    $('#payment-filter-clear').click(function() {
+    $('#payment-filter-clear').click(function () {
 
         let _amountMonth = 0.00;
 
@@ -622,7 +646,7 @@ $(document).ready(function() {
 
         $('#payment-filter-value').val('');
 
-        $('#payments-table-body tr').each(function() {
+        $('#payments-table-body tr').each(function () {
 
             $(this).attr('hidden', false);
 
@@ -638,7 +662,7 @@ $(document).ready(function() {
 
     });
 
-    $('#payment-filter-date-button').click(async function() {
+    $('#payment-filter-date-button').click(async function () {
 
         let _year = $('#payments-year-value').val();
         let _month = $('#payments-month-value').val();
@@ -647,14 +671,14 @@ $(document).ready(function() {
 
             currentYear = _year;
             currentMonth = _month;
-    
+
             await loadPayments(currentYear, currentMonth);
 
         }
 
     });
 
-    $('#hide-form').click(function() {
+    $('#hide-form').click(function () {
 
         let _form_card = $('#payment-form').closest('.card');
 
@@ -664,10 +688,10 @@ $(document).ready(function() {
 
     });
 
-    $('#category').on('change', function() {
+    $('#category').on('change', function () {
         let _category = $(this).val();
         let _categories = ['supermercado', 'aluguel', 'internet', 'light', 'agua', 'gas'];
-        if (!_categories.includes(_category) && ($('#payment-title').text() == 'Casa') ) {
+        if (!_categories.includes(_category) && ($('#payment-title').text() == 'Casa')) {
             $('#description').val('Outros');
             $('#description').prop('disabled', true);
         } else {
@@ -676,7 +700,7 @@ $(document).ready(function() {
         }
     });
 
-    $('#payment-database').on('change', function() {
+    $('#payment-database').on('change', function () {
 
         // const data = {
         //     db_name: $(this).val()
@@ -697,13 +721,13 @@ $(document).ready(function() {
 
     });
 
-    $('#update-spreadsheets').on('click', async function() {
+    $('#update-spreadsheets').on('click', async function () {
 
         await updateSpreadSheets(`01/${currentMonth}/${currentYear}`, 'Debit');
 
     });
 
-    $(document).keydown(function(event) {
+    $(document).keydown(function (event) {
 
         if (!$('input').is(':focus')) {
 
@@ -729,7 +753,7 @@ $(document).ready(function() {
 
     });
 
-    $(document).on('wheel', function(event) {
+    $(document).on('wheel', function (event) {
         if ($('.card-header')[0].contains(event.target) && !$('input').is(':focus')) {
             if (event.originalEvent.deltaY < 0) {
                 $('#next-month').trigger('click');
@@ -756,7 +780,7 @@ $(document).ready(function() {
 
     //-------|  F I R S T   I N I T I A L I Z A T I O N
 
-    $('input').on('input', function() {
+    $('input').on('input', function () {
         if ($(this).removeClass('is-invalid'));
     });
 
